@@ -1,58 +1,108 @@
 import mongoose from "mongoose";
+// Mongoose MongoDB ke saath interact karne ke liye use hota hai
 
-const userSchema=new mongoose.Schema({
+
+// User Schema (Database structure)
+const userSchema = new mongoose.Schema(
+{
   name:{
-    type:String,
-    required:true,
-    trim:true
+    type:String,        
+    required:true,      // Name mandatory hai
+    trim:true           // Extra spaces automatically remove ho jayenge
   },
+
   email:{
     type:String,
-    required:true,
-    unique:true,
-    trim:true
+    required:true,      // Email mandatory hai
+    unique:true,        // Same email dobara store nahi ho sakta
+    trim:true,
+    lowercase:true      // Email automatically lowercase ho jayega
   },
+
   password:{
     type:String,
     required:true,
-    select:false  
-    // Matlab password normally database query me show nahi hoga
+    minlength:6,        // Minimum password length
+    select:false        // Password queries me return nahi hoga
   },
+
   role:{
     type:String,
-    enum:["user","admin"],
-    default:"user"
+    enum:["user","admin"], 
+    default:"user"       
   },
+
   accountVerified:{
     type:Boolean,
     default:false
   },
+
+  // Borrowed books ka record
   borrowedBooks:[
     {
       bookId:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"Book"
       },
+
       returned:{
         type:Boolean,
         default:false
       },
+
       bookTitle:String,
       borrowDate:Date,
-      dueDate:Date,
-      },
+      dueDate:Date
+    },
   ],
+
+  // User avatar
   avatar:{
     url:String,
     public_id:String
   },
+
+  // Password reset fields
   resetPasswordToken:String,
   resetPasswordExpire:Date,
+
+  // OTP verification fields
   verificationCode:Number,
-  verificationCodeExpire:Date,
+  verificationCodeExpire:Date
+
 },
 {
-  timestamps:true,
+  timestamps:true
 }
 );
-export const User=mongoose.model("User",userSchema);
+
+
+// OTP generate method
+userSchema.methods.generateVerificationCode = function(){
+
+  function generateRandomFiveDigitCode() {
+
+    const firstDigit = Math.floor(Math.random() * 9) + 1;
+
+    const otherDigits = Math.floor(Math.random() * 10000)
+      .toString()
+      .padStart(4,'0');
+
+    return parseInt(firstDigit + otherDigits);
+  }
+
+  const verificationCode = generateRandomFiveDigitCode();
+
+  this.verificationCode = verificationCode;
+
+  // 15 minutes expiry
+  this.verificationCodeExpire = Date.now() + 15 * 60 * 1000;
+
+  return verificationCode;
+};
+
+
+// User Model
+const User = mongoose.model("User", userSchema);
+
+export default User;
