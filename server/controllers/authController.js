@@ -12,6 +12,7 @@ import { sendVerificationCode } from "../utils/sendVerificationCode.js";
 
 // Middleware to catch async errors automatically
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
+import { sendToken } from "../utils/sendToken.js";
 
 
 // Register Controller
@@ -78,3 +79,54 @@ export const register = catchAsyncErrors(async (req, res, next) => {
   // Step 11: Send OTP email to user
   await sendVerificationCode(verificationCode, email, res);
 });
+
+export const verifyOTP = catchAsyncErrors(async (req, res, next) => {
+
+  const { email, otp } = req.body;
+
+  if (!email || !otp) {
+    return next(new ErrorHandler("Please provide email and OTP", 400));
+  }
+
+  // Find all unverified entries
+  const userAllEntries = await User.find({
+    email,
+    accountVerified: false,
+  }).sort({ createdAt: -1 });
+
+  if (userAllEntries.length === 0) {
+    return next(
+      new ErrorHandler("No registration attempts found for this email", 404)
+    );
+  }
+
+  let user = userAllEntries[0];
+
+  // Delete older unverified entries
+  if (userAllEntries.length > 1) {
+    await User.deleteMany({
+      email,
+      accountVerified: false,
+      _id: { $ne: user._id }
+    });
+  }
+
+  // Check OTP and expiry
+  if (
+    user.verificationCode !== Number(otp) ||
+    user.verificationCodeExpire < Date.now()
+  ) {
+    return next(new ErrorHandler("Invalid or expired OTP", 400));
+  }
+
+  // Verify account
+  user.accountVerified = true;
+  user.verificationCode = undefined;
+  user.verificationCodeExpire = undefined;
+
+  await user.save({validateModifiedOnly: true});
+
+  sendToken(user, 200,"Account verified successfully", res);
+
+});
+

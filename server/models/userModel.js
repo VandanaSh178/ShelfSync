@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 // Mongoose MongoDB ke saath interact karne ke liye use hota hai
-
+import jwt from "jsonwebtoken";
 
 // User Schema (Database structure)
 const userSchema = new mongoose.Schema(
@@ -101,6 +101,11 @@ userSchema.methods.generateVerificationCode = function(){
   return verificationCode;
 };
 
+userSchema.methods.generateToken = function(){
+  return jwt.sign({id:this._id}, process.env.JWT_SECRET, {
+    expiresIn:"7d"
+  });
+};
 
 // User Model
 const User = mongoose.model("User", userSchema);
