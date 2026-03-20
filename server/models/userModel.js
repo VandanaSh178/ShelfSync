@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 // Mongoose MongoDB ke saath interact karne ke liye use hota hai
 import jwt from "jsonwebtoken";
+import crypto from "crypto";  
 
 // User Schema (Database structure)
 const userSchema = new mongoose.Schema(
@@ -103,8 +104,18 @@ userSchema.methods.generateVerificationCode = function(){
 
 userSchema.methods.generateToken = function(){
   return jwt.sign({id:this._id}, process.env.JWT_SECRET, {
-    expiresIn:"7d"
+    expiresIn: process.env.JWT_EXPIRES,
   });
+};
+
+userSchema.methods.generatePasswordResetToken = function(){
+  const resetToken = crypto.randomBytes(20).toString("hex");
+
+  this.resetPasswordToken = crypto.createHash("sha256").update(resetToken).digest("hex");
+
+  this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes expiry  
+
+  return resetToken;
 };
 
 // User Model

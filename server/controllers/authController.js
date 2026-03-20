@@ -13,7 +13,9 @@ import { sendVerificationCode } from "../utils/sendVerificationCode.js";
 // Middleware to catch async errors automatically
 import catchAsyncErrors from "../middlewares/catchAsyncErrors.js";
 import { sendToken } from "../utils/sendToken.js";
-
+import { sendEmail } from "../utils/sendEmail.js";
+import { generateForgotPasswordEmailTemplate } from "../utils/emailTemplates.js";
+import crypto from "crypto";
 
 // Register Controller
 export const register = catchAsyncErrors(async (req, res, next) => {
@@ -130,3 +132,175 @@ export const verifyOTP = catchAsyncErrors(async (req, res, next) => {
 
 });
 
+export const login = catchAsyncErrors(async (req, res, next) => {
+
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return next(new ErrorHandler("Please provide email and password", 400));
+  }
+
+  const user
+    = await User.findOne({ email, accountVerified: true }).select("+password");
+
+  if (!user) {
+    return next(new ErrorHandler("Invalid email or account not verified", 401));
+  }
+
+  const isPasswordMatched = await bcrypt.compare(password, user.password);
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Invalid password", 401));
+  }
+
+
+  sendToken(user, 200, "Logged in successfully", res);
+});
+
+export const logout = catchAsyncErrors(async (req, res, next) => {
+  res
+    .status(200)
+    .cookie("token", null, {
+      expires: new Date(Date.now()),
+      httpOnly: true,
+    })
+    .json({
+      success: true,
+      message: "Logged out successfully",
+    });
+}
+);
+
+export const getUserDetails = catchAsyncErrors(async (req, res, next) => {
+  const user = req.user;
+  res.status(200).json({
+    success: true,
+    user,
+  });
+});
+
+export const forgotPassword = catchAsyncErrors(async (req, res, next) => {
+  if (!req.body.email) {
+    return next(new ErrorHandler("Please provide your email", 400));
+  }
+
+  const user = await User.findOne({
+    email: req.body.email,
+    accountVerified: true,
+  });
+
+  if (!user) {
+    return next(new ErrorHandler("Invalid email", 400));
+  }
+
+  // Generate reset token
+  const resetToken = user.generatePasswordResetToken();
+
+  await user.save({ validateBeforeSave: false });
+
+  // Create reset URL
+  const resetPasswordUrl = `${process.env.FRONTEND_URL}/password/reset/${resetToken}`;
+
+  // Generate email message
+  const message = generateForgotPasswordEmailTemplate(resetPasswordUrl);
+
+  console.log("working till here");
+  console.log(user.email);
+  console.log(message);
+
+  try {
+    await sendEmail(
+  user.email, 
+  "SHELFSYNC Password Recovery", 
+  message
+);
+
+    // ✅ SEND RESPONSE
+    res.status(200).json({
+      success: true,
+      message: "Password reset email sent successfully",
+    });
+
+  } catch (error) {
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    return next(new ErrorHandler(error.message, 500));
+  }
+});
+
+export const resetPassword = catchAsyncErrors(async (req, res, next) => {
+  const {token} = req.params;
+  const resetPasswordToken = crypto.createHash("sha256").update(req.params.token).digest("hex");
+
+  const user = await User.findOne({
+    resetPasswordToken,
+    resetPasswordExpire: { $gt: Date.now() },
+    accountVerified: true,
+  });
+
+  if (!user) {
+    return next(new ErrorHandler("Invalid or expired password reset token", 400));
+  }
+
+  if(req.body.password !== req.body.confirmPassword){
+    return next(new ErrorHandler("Password and confirm password do not match", 400));
+  }
+
+  if (req.body.password.length < 6||req.body.password.length > 20||
+    req.body.confirmPassword.length < 6||req.body.confirmPassword.length > 20
+  ) {
+    return next(
+      new ErrorHandler("Password must be at least 6 characters long and at most 20 characters long", 400)
+    );
+  }
+
+  const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+
+  user.password = hashedPassword;
+  user.resetPasswordToken = undefined;
+  user.resetPasswordExpire = undefined;
+
+  await user.save();
+
+  sendToken(user, 200, "Password reset successfully", res);
+}
+);
+
+export const updatePassword = catchAsyncErrors(async (req, res, next) => {
+  // 1. Fetch user and explicitly include password field
+  const user = await User.findById(req.user._id).select("+password");
+
+  const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+  // 2. Basic validation
+  if (!currentPassword || !newPassword || !confirmNewPassword) {
+    return next(new ErrorHandler("Please fill all password fields", 400));
+  }
+
+  // 3. Verify current password
+  const isPasswordMatched = await bcrypt.compare(currentPassword, user.password);
+  if (!isPasswordMatched) {
+    return next(new ErrorHandler("Current password is incorrect", 400));
+  }
+
+  // 4. Validate new password length
+  if (newPassword.length < 6 || newPassword.length > 20) {
+    return next(new ErrorHandler("New password must be between 6 and 20 characters", 400));
+  }
+
+  // 5. Match new passwords
+  if (newPassword !== confirmNewPassword) {
+    return next(new ErrorHandler("New password and confirm password do not match", 400));
+  }
+
+  // 6. Hash and Save (Ensure you hash it here if not using a pre-save hook)
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  user.password = hashedPassword;
+  await user.save();
+
+  // 7. Send fresh token so the user stays logged in
+  sendToken(user, 200, "Password updated successfully", res);
+});
