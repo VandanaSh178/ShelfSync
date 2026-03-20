@@ -52,3 +52,51 @@ export function generateVerificationOtpEmailTemplate(verificationCode) {
   </div>
   `;
 }
+
+export function generateForgotPasswordEmailTemplate(resetPasswordUrl) {
+  return `
+    <div style="font-family: Arial, sans-serif; padding: 20px;">
+      
+      <h2 style="color: #333;">🔐 Password Reset Request</h2>
+      
+      <p>Hello,</p>
+      
+      <p>
+        You requested to reset your password for your <b>ShelfSync</b> account.
+      </p>
+      
+      <p>
+        Click the button below to reset your password:
+      </p>
+      
+      <a href="${resetPasswordUrl}" 
+         style="
+           display: inline-block;
+           padding: 10px 20px;
+           background-color: #4CAF50;
+           color: white;
+           text-decoration: none;
+           border-radius: 5px;
+           margin-top: 10px;
+         ">
+         Reset Password
+      </a>
+      
+      <p style="margin-top: 20px;">
+        Or copy and paste this link in your browser:
+      </p>
+      
+      <p style="color: blue;">${resetPasswordUrl}</p>
+      
+      <p style="margin-top: 20px;">
+        ⚠️ This link will expire in a short time for security reasons.
+      </p>
+      
+      <p>If you did not request this, please ignore this email.</p>
+      
+      <br/>
+      <p>Thanks,</p>
+      <p><b>ShelfSync Team</b></p>
+    </div>
+  `;
+}
