@@ -19,6 +19,9 @@ import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 // Authentication routes (register, login, verify OTP etc.)
 
+import bookRoutes from "./routes/bookRouter.js";
+// Book management routes (add book, get all books, delete book etc.)
+
 // Express application create kar rahe hain
 export const app = express();
 
@@ -62,6 +65,7 @@ app.use(express.urlencoded({ extended: true }));
 // POST /api/auth/login
 // POST /api/auth/verify-otp
 app.use("/api/auth", authRoutes);
+app.use("/api/books", bookRoutes);
 
 
 // Global error handling middleware
