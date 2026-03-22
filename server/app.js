@@ -1,73 +1,52 @@
 import express from "express";
-// Express framework server banane ke liye
-
-import { config } from "dotenv";
-// .env file se environment variables load karne ke liye
-
 import cookieParser from "cookie-parser";
-// Client/browser se aane wali cookies read karne ke liye
-
 import cors from "cors";
-// Cross-Origin requests allow karne ke liye (frontend ↔ backend communication)
+import expressFileUpload from "express-fileupload";
 
 import { connectDB } from "./database/db.js";
-// MongoDB connection function
-
 import { errorMiddleware } from "./middlewares/errorMiddleware.js";
-// Custom global error handler
 
 import authRoutes from "./routes/authRoutes.js";
-// Authentication routes (register, login, verify OTP etc.)
-
 import bookRoutes from "./routes/bookRouter.js";
-// Book management routes (add book, get all books, delete book etc.)
+import borrowRouter from "./routes/borrowRouter.js";
+import userRouter from "./routes/userRouter.js"; // ✅ FIXED
+import { notifyUsers } from "./services/notifyUsers.js";
+import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
 
-// Express application create kar rahe hain
 export const app = express();
 
+// ✅ DB connect
+// connectDB();
 
-// Environment variables load kar rahe hain
-config({ path: "./config/config.env" });
-
-
-// MongoDB database connect kar rahe hain
-connectDB();
-
-
-// CORS middleware enable
-// Sirf specified frontend ko backend access ki permission
+// ✅ CORS
 app.use(
   cors({
     origin: process.env.FRONTEND_URL,
-    credentials: true
+    credentials: true,
   })
 );
 
-
-// Cookie parser middleware
-// Request ke cookies ko read karne ke liye
+// ✅ Middlewares
 app.use(cookieParser());
-
-
-// JSON body parse karne ke liye
-// Frontend se JSON data aata hai to Express usse read kar sakta hai
 app.use(express.json());
-
-
-// URL encoded form data parse karne ke liye
-// Example: form submissions
 app.use(express.urlencoded({ extended: true }));
 
+// ✅ File Upload FIX (Windows compatible)
+app.use(
+  expressFileUpload({
+    useTempFiles: true,
+    tempFileDir: "./tmp/", // ✅ FIXED
+  })
+);
 
-// Authentication routes mount
-// Final endpoints example:
-// POST /api/auth/register
-// POST /api/auth/login
-// POST /api/auth/verify-otp
+// ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
+app.use("/api/borrow", borrowRouter);
+app.use("/api/users", userRouter);
 
 
-// Global error handling middleware
-// Agar kahin bhi error aaye to ye middleware handle karega
+notifyUsers(); // ✅ CALL THE FUNCTION TO START NOTIFICATIONS
+removeUnverifiedAccounts(); // ✅ CALL THE FUNCTION TO START ACCOUNT CLEANUP
+// ✅ Error middleware (ALWAYS LAST)
 app.use(errorMiddleware);
