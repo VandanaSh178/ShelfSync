@@ -190,13 +190,25 @@ export const register = (userData) => async (dispatch) => {
 };
 
 // OTP
+
 export const otpVerification = (email, otp) => async (dispatch) => {
   try {
     dispatch(otpVerificationRequest());
-    const { data } = await axios.post("/api/auth/otp-verification", { email, otp }, config);
+    
+    // Change "/api/auth/otp-verification" TO "/api/auth/verify-otp"
+    const { data } = await axios.post(
+      "/api/auth/verify-otp", 
+      { email, otp }, 
+      config
+    );
+
     dispatch(otpVerificationSuccess(data));
   } catch (error) {
-    dispatch(otpVerificationFailure(error.response?.data?.message || "OTP verification failed"));
+    dispatch(
+      otpVerificationFailure(
+        error.response?.data?.message || "OTP verification failed"
+      )
+    );
   }
 };
 
@@ -253,26 +265,20 @@ export const forgotPassword = (email) => async (dispatch) => {
   }
 };
 
-export const resetPassword = (token, password) => async (dispatch) => {
+export const resetPassword = (token, passwordData) => async (dispatch) => {
   try {
     dispatch(resetPasswordRequest());
 
+    // passwordData should be { password, confirmPassword }
     const { data } = await axios.put(
       `/api/auth/password/reset/${token}`,
-      { password },
-      {
-        withCredentials: true,
-        headers: { "Content-Type": "application/json" },
-      }
+      passwordData, 
+      config
     );
 
     dispatch(resetPasswordSuccess(data));
   } catch (error) {
-    dispatch(
-      resetPasswordFailure(
-        error.response?.data?.message || "Password reset failed"
-      )
-    );
+    dispatch(resetPasswordFailure(error.response?.data?.message || "Password reset failed"));
   }
 };
 

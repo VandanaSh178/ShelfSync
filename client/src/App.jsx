@@ -4,9 +4,12 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
-import OTPVerification from './pages/OTPVerification';
+
 import ResetPassword from './pages/ResetPassword';
 import { ToastContainer } from 'react-toastify';
+// Change this line
+import OTPVerification from "./pages/OTPVerify";
+
 
 const App = () => {
   return (

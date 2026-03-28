@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from "react";
 import logo_with_title_white from "../assets/logo-with-title.png"; 
-import logo from "../assets/logo-with-title-black.png";
+import logo_black from "../assets/logo-with-title-black.png";
 import { useDispatch, useSelector } from "react-redux";
 import { Navigate, useNavigate, Link } from "react-router-dom";
 import { register, clearError, clearMessage } from "../store/slices/authSlice";
 import { toast } from "react-toastify";
+// Using lucide-react for professional, thin-stroke icons
+import { BookOpen, ShieldCheck, Globe, ArrowRight } from "lucide-react";
 
 const Register = () => {
   const [name, setName] = useState("");
@@ -36,87 +38,123 @@ const Register = () => {
   if (isAuthenticated) return <Navigate to="/" />;
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-white overflow-hidden">
+    <div className="flex min-h-screen bg-[#FDFCFB] text-[#1A1A1A]">
       
-      {/* LEFT SIDE: THE BIG BLACK BOX */}
-      <div className="hidden md:flex w-1/2 bg-black text-white flex-col items-center justify-center p-12 rounded-tr-[100px] rounded-br-[100px] shadow-2xl">
-        <div className="text-center">
+      {/* LEFT SIDE: THE LIBRARY AMBIANCE (Desktop Only) */}
+      <div className="hidden lg:flex w-[40%] bg-[#121212] text-white flex-col justify-between p-16 relative">
+        {/* Subtle pattern overlay */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none bg-[url('https://www.transparenttextures.com/patterns/stardust.png')]"></div>
+        
+        <div className="relative z-10">
           <img 
             src={logo_with_title_white} 
-            alt="logo" 
-            className="h-56 w-auto object-contain mb-8"
+            alt="ShelfSync" 
+            className="h-10 w-auto mb-20"
           />
-          <h1 className="text-4xl font-light tracking-widest mb-4">SHELF SYNC</h1>
-          <p className="text-gray-400 mb-12 max-w-sm mx-auto">
-            Manage your inventory with precision and elegance.
-          </p>
-          <Link 
-            to="/login"
-            className="border-2 rounded-full font-bold border-white py-3 px-12 hover:bg-white hover:text-black transition-all duration-300"
-          >
-            SIGN IN
-          </Link>
+          
+          <div className="space-y-12">
+            <h1 className="text-5xl font-serif leading-tight">
+              Organizing the world’s <br />
+              <span className="italic text-gray-400 font-light text-4xl">knowledge, one shelf at a time.</span>
+            </h1>
+            
+            <div className="space-y-8">
+              <div className="flex items-start gap-4">
+                <BookOpen className="w-6 h-6 mt-1 text-gray-400" />
+                <div>
+                  <h4 className="font-semibold text-lg">Smart Cataloging</h4>
+                  <p className="text-gray-500 text-sm">Automated ISBN fetching and category sorting.</p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <ShieldCheck className="w-6 h-6 mt-1 text-gray-400" />
+                <div>
+                  <h4 className="font-semibold text-lg">Circulation Control</h4>
+                  <p className="text-gray-500 text-sm">Manage check-outs, returns, and late fees with ease.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="relative z-10 text-xs tracking-widest text-gray-600 uppercase">
+          ShelfSync © 2026 // Premium Library Infrastructure
         </div>
       </div>
 
-      {/* RIGHT SIDE: THE FORM */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
-        {/* All elements must be inside this wrapper div to stay centered */}
-        <div className="max-w-sm w-full">
+      {/* RIGHT SIDE: THE REGISTRATION FORM */}
+      <div className="flex-1 flex items-center justify-center p-8 lg:p-24">
+        <div className="w-full max-w-md">
           
-          <div className="flex flex-col-reverse sm:flex-row items-center justify-center gap-5 mb-4">
-            <h3 className="font-medium text-4xl uppercase tracking-tighter">Sign Up</h3>
-            <img src={logo} alt="logo" className="h-auto w-20 object-contain" />
+          <div className="mb-12">
+            <div className="lg:hidden mb-8">
+              <img src={logo_black} alt="logo" className="h-8 w-auto" />
+            </div>
+            <h2 className="text-4xl font-serif mb-3">Create an Account</h2>
+            <p className="text-gray-500">Join the digital transformation of your local library.</p>
           </div>
 
-          <p className="text-gray-500 text-center mb-10">Please provide your information to sign up.</p>
-          
-          <form onSubmit={handleRegister} className="space-y-4">
-            <div>
+          <form onSubmit={handleRegister} className="space-y-6">
+            <div className="group">
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 transition-colors group-focus-within:text-black">
+                Librarian Name
+              </label>
               <input 
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Full Name"
                 required
-                className="w-full px-4 py-3 border border-black rounded-md focus:ring-1 focus:ring-black outline-none transition-all" 
+                className="w-full px-0 py-3 bg-transparent border-b-2 border-gray-200 focus:border-black outline-none transition-all placeholder:text-gray-300 text-lg" 
               />
             </div>
 
-            <div>
+            <div className="group">
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 transition-colors group-focus-within:text-black">
+                Institutional Email
+              </label>
               <input 
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="Email Address"
+                placeholder="email@library.org"
                 required
-                className="w-full px-4 py-3 border border-black rounded-md focus:ring-1 focus:ring-black outline-none transition-all" 
+                className="w-full px-0 py-3 bg-transparent border-b-2 border-gray-200 focus:border-black outline-none transition-all placeholder:text-gray-300 text-lg" 
               />
             </div>
 
-            <div>
+            <div className="group">
+              <label className="block text-xs font-bold uppercase tracking-widest text-gray-400 mb-2 transition-colors group-focus-within:text-black">
+                Access Password
+              </label>
               <input 
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
+                placeholder="••••••••"
                 required
-                className="w-full px-4 py-3 border border-black rounded-md focus:ring-1 focus:ring-black outline-none transition-all" 
+                className="w-full px-0 py-3 bg-transparent border-b-2 border-gray-200 focus:border-black outline-none transition-all placeholder:text-gray-300 text-lg" 
               />
             </div>
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-black text-white py-3 rounded-md font-bold hover:bg-gray-800 transition-colors disabled:bg-gray-400 mt-2 uppercase tracking-widest"
+              className="group w-full bg-[#121212] text-white py-5 rounded-none font-bold hover:bg-black transition-all flex items-center justify-center gap-3 disabled:bg-gray-300"
             >
-              {loading ? "Registering..." : "Register"}
+              {loading ? "INITIALIZING..." : (
+                <>
+                  GET ACCESS <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </>
+              )}
             </button>
           </form>
 
-          {/* Mobile Footer */}
-          <p className="mt-8 text-center text-sm text-gray-600 md:hidden">
-            Already have an account? <Link to="/login" className="font-bold text-black underline">Sign In</Link>
+          <p className="mt-12 text-sm text-gray-500">
+            Already registered?{" "}
+            <Link to="/login" className="text-black font-bold border-b border-black pb-1 hover:text-gray-600 hover:border-gray-600 transition-all">
+              Sign In
+            </Link>
           </p>
         </div>
       </div>
