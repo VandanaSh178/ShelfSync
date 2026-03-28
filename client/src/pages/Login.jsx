@@ -120,7 +120,7 @@ const Login = () => {
             <div className="flex items-center justify-between text-xs uppercase tracking-widest">
                 <button 
                   type="button"
-                  onClick={() => navigate("/forgot-password")}
+                  onClick={() => navigate("/password/forgot")}
                   className="text-gray-400 hover:text-black transition-colors"
                 >
                   Forgot Key?

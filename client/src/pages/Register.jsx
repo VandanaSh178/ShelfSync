@@ -35,6 +35,17 @@ const Register = () => {
     }
   }, [dispatch, error, message, navigate, email]);
 
+  // Add this inside your OTPVerification component
+useEffect(() => {
+  if (otp.length === 5) {
+    // Small delay for visual feedback so the user sees the 5th digit
+    const timeout = setTimeout(() => {
+      dispatch(otpVerification(decodeURIComponent(email), otp));
+    }, 300);
+    return () => clearTimeout(timeout);
+  }
+}, [otp, email, dispatch]);
+
   if (isAuthenticated) return <Navigate to="/" />;
 
   return (
