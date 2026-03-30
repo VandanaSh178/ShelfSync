@@ -4,8 +4,7 @@ import closeIcon from "../assets/close-square.png";
 import keyIcon from "../assets/key.png";
 
 const AddNewAdmin = () => {
-  return <>
-  <h1 className="z-20">ADD NEW ADMIN POPUP</h1></>;
+  return <></>;
 };
 
 export default AddNewAdmin;

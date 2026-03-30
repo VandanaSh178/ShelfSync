@@ -1,53 +1,56 @@
-import { createSlice } from "@reduxjs/toolkit"; // Fixed import path
+import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
+  addNewAdminPopup: false,
   settingPopup: false,
   addBookPopup: false,
   readBookPopup: false,
   recordBookPopup: false,
   returnBookPopup: false,
-  addNewAdminPopup: false,
 };
 
-const popupSlice = createSlice({
-  name: "popup",
+const popUpSlice = createSlice({
+  name: "popups",
   initialState,
   reducers: {
-    toggleSettingPopup(state) {
-      state.settingPopup = !state.settingPopup;
-    },
-    toggleAddBookPopup(state) {
-      state.addBookPopup = !state.addBookPopup; // Fixed "Satellite" to "state"
-    },
-    toggleReadBookPopup(state) {
-      state.readBookPopup = !state.readBookPopup;
-    },
-    toggleRecordBookPopup(state) {
-      state.recordBookPopup = !state.recordBookPopup;
-    },
-    toggleReturnBookPopup(state) {
-      state.returnBookPopup = !state.returnBookPopup;
-    },
-    toggleAddNewAdminPopup(state) {
+    toggleAddNewAdminPopup: (state) => {
       state.addNewAdminPopup = !state.addNewAdminPopup;
     },
-    // 🔥 Bonus: Close everything at once
-    closeAllPopups(state) {
-      Object.keys(state).forEach((key) => {
-        state[key] = false;
-      });
+    toggleSettingPopup: (state) => {
+      state.settingPopup = !state.settingPopup;
     },
+    toggleAddBookPopup: (state) => {
+      state.addBookPopup = !state.addBookPopup;
+    },
+    toggleRecordBookPopup: (state) => {
+      state.recordBookPopup = !state.recordBookPopup;
+    },
+    toggleReadBookPopup: (state) => {
+      state.readBookPopup = !state.readBookPopup;
+    },
+    toggleReturnBookPopup: (state) => {
+      state.returnBookPopup = !state.returnBookPopup;
+    },
+    closeAllPopups: (state) => {
+      state.addNewAdminPopup = false;
+      state.settingPopup = false;
+      state.addBookPopup = false;
+      state.readBookPopup = false;
+      state.recordBookPopup = false;
+      state.returnBookPopup = false;
+    }
   },
 });
 
-export const {
-  toggleSettingPopup,
-  toggleAddBookPopup,
-  toggleReadBookPopup,
-  toggleRecordBookPopup,
-  toggleReturnBookPopup,
-  toggleAddNewAdminPopup,
-  closeAllPopups,
-} = popupSlice.actions;
+// ✅ Export ALL actions so you can use them in your components
+export const { 
+  toggleAddNewAdminPopup, 
+  toggleSettingPopup, 
+  toggleAddBookPopup, 
+  toggleRecordBookPopup, 
+  toggleReadBookPopup, 
+  toggleReturnBookPopup, 
+  closeAllPopups 
+} = popUpSlice.actions;
 
-export default popupSlice.reducer;
+export default popUpSlice.reducer;

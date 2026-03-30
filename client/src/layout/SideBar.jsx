@@ -1,18 +1,21 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { logout, resetAuth } from "../store/slices/authSlice";
+import { logoutUser, resetAuthSlice } from "../store/slices/authSlice";
 import { toast } from "react-toastify";
 
 // Icons
 import { RiAdminFill } from "react-icons/ri";
-import { Settings } from "lucide-react"; // Renamed for standard component naming
+import { 
+  Settings, 
+  LayoutDashboard, 
+  Book, 
+  Library, 
+  Users, 
+  LogOut, 
+  X,
+  BookOpenCheck // Better icon for "My Borrows"
+} from "lucide-react";
 import logo_with_title from "../assets/logo-with-title.png";
-import logoutIcon from "../assets/logout.png";
-import dashboardIcon from "../assets/element.png";
-import bookIcon from "../assets/book.png";
-import catalogIcon from "../assets/catalog.png";
-import usersIcon from "../assets/people.png";
-import closeIcon from "../assets/close-square.png";
 import { toggleAddNewAdminPopup } from "../store/slices/popUpSlice";
 
 const SideBar = ({
@@ -22,128 +25,118 @@ const SideBar = ({
   selectedComponent,
 }) => {
   const dispatch = useDispatch();
-  const {addNewAdminPopup}=useSelector(state=>state.popup);
-  const { error, message, user } = useSelector((state) => state.auth);
+  const { user, error, message } = useSelector((state) => state.auth);
 
   const handleLogout = () => {
-    dispatch(logout());
+    dispatch(logoutUser());
+  };
+
+  const handleNavClick = (component) => {
+    setSelectedComponent(component);
+    if (window.innerWidth < 768) {
+      setIsSideBarOpen(false);
+    }
   };
 
   useEffect(() => {
     if (error) {
       toast.error(error);
-      dispatch(resetAuth());
+      dispatch(resetAuthSlice());
     }
     if (message) {
       toast.success(message);
-      dispatch(resetAuth());
+      dispatch(resetAuthSlice());
     }
   }, [dispatch, error, message]);
 
-  // 🔥 Common button style helper
   const navBtn = (name) =>
-    `w-full py-2 px-3 rounded-md flex items-center space-x-3 transition ${
-      selectedComponent === name ? "bg-gray-800" : "hover:bg-gray-800"
+    `w-full py-3 px-4 rounded-xl flex items-center space-x-3 transition-all duration-300 group ${
+      selectedComponent === name 
+        ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" 
+        : "hover:bg-gray-900 text-gray-400 hover:text-white"
     }`;
 
   return (
     <aside
       className={`fixed ${
         isSideBarOpen ? "left-0" : "-left-full"
-      } top-0 z-20 transition-all duration-300 md:relative md:left-0 flex w-64 bg-black text-white flex-col h-screen border-r border-gray-800`}
+      } top-0 z-50 transition-all duration-500 md:relative md:left-0 flex w-72 bg-black text-white flex-col h-screen border-r border-gray-900 shadow-2xl`}
     >
-      {/* Logo Section */}
-      <div className="flex items-center justify-center px-4 py-6 border-b border-gray-800">
+      <button 
+        onClick={() => setIsSideBarOpen(false)}
+        className="absolute top-6 right-6 p-2 bg-gray-900 rounded-lg md:hidden"
+      >
+        <X className="w-5 h-5 text-gray-400" />
+      </button>
+
+      <div className="flex items-center justify-center px-8 py-10">
         <img
           src={logo_with_title}
-          alt="logo"
-          className="w-36 object-contain"
+          alt="ShelfSync Logo"
+          className="w-40 object-contain brightness-0 invert"
         />
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 px-4 py-4 space-y-2 overflow-y-auto">
-        {/* Dashboard */}
-        <button
-          className={navBtn("dashboard")}
-          onClick={() => setSelectedComponent("dashboard")}
-        >
-          <img src={dashboardIcon} alt="dashboard" className="w-5 h-5" />
-          <span>Dashboard</span>
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
+        <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Main Menu</p>
+        
+        {/* Dashboard - Fixed Icon & Click Handler */}
+        <button className={navBtn("dashboard")} onClick={() => handleNavClick("dashboard")}>
+          <LayoutDashboard className="w-5 h-5" />
+          <span className="font-bold text-xs uppercase tracking-widest">Overview</span>
         </button>
 
-        {/* Books */}
-        <button
-          className={navBtn("books")}
-          onClick={() => setSelectedComponent("books")}
-        >
-          <img src={bookIcon} alt="books" className="w-5 h-5" />
-          <span>Books</span>
+        {/* Books - Fixed Icon & Click Handler */}
+        <button className={navBtn("books")} onClick={() => handleNavClick("books")}>
+          <Book className="w-5 h-5" />
+          <span className="font-bold text-xs uppercase tracking-widest">Library</span>
         </button>
 
-        {/* Admin Only */}
         {user?.role === "admin" && (
-          <>
-            <button
-              className={navBtn("catalog")}
-              onClick={() => setSelectedComponent("catalog")}
-            >
-              <img src={catalogIcon} alt="catalog" className="w-5 h-5" />
-              <span>Catalog</span>
+          <div className="pt-6 space-y-2">
+            <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Management</p>
+            <button className={navBtn("catalog")} onClick={() => handleNavClick("catalog")}>
+              <Library className="w-5 h-5" />
+              <span className="font-bold text-xs uppercase tracking-widest">Inventory</span>
             </button>
-
-            <button
-              className={navBtn("users")}
-              onClick={() => setSelectedComponent("users")}
-            >
-              <img src={usersIcon} alt="users" className="w-5 h-5" />
-              <span>Users</span>
+            <button className={navBtn("users")} onClick={() => handleNavClick("users")}>
+              <Users className="w-5 h-5" />
+              <span className="font-bold text-xs uppercase tracking-widest">Members</span>
             </button>
-
-            <button
-              className={navBtn("add-admin")}
+            <button 
+              className="w-full py-3 px-4 rounded-xl flex items-center space-x-3 transition-all hover:bg-orange-500/10 text-orange-500 border border-orange-500/20 mt-4"
               onClick={() => dispatch(toggleAddNewAdminPopup())}
             >
               <RiAdminFill className="w-5 h-5" />
-              <span>Add New Admin</span>
+              <span className="font-bold text-xs uppercase tracking-widest text-left">Grant Admin Access</span>
             </button>
-          </>
+          </div>
         )}
 
-        {/* Borrowed Books (User only) */}
         {user?.role === "user" && (
-          <button
-            className={navBtn("borrowed")}
-            onClick={() => setSelectedComponent("borrowed")}
-          >
-            <img src={bookIcon} alt="borrowed" className="w-5 h-5" />
-            <span>My Books</span>
-          </button>
+          <div className="pt-6">
+            <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Personal</p>
+            <button className={navBtn("my borrowed books")} onClick={() => handleNavClick("my borrowed books")}>
+              <BookOpenCheck className="w-5 h-5" />
+              <span className="font-bold text-xs uppercase tracking-widest">My Borrows</span>
+            </button>
+          </div>
         )}
       </nav>
 
-      {/* Settings / Update Credentials */}
-      <div className="px-4 pb-2">
-        <button
-          className={navBtn("settings")}
-          onClick={() => setSelectedComponent("settings")}
-        >
-          <Settings className="w-5 h-5 text-gray-400" />
-          <span>Update Credentials</span>
+      <div className="p-4 border-t border-gray-900 space-y-2">
+        <button className={navBtn("settings")} onClick={() => handleNavClick("settings")}>
+          <Settings className="w-5 h-5" />
+          <span className="font-bold text-xs uppercase tracking-widest">Security</span>
         </button>
-      </div>
-
-      {/* Logout Section */}
-      <div className="px-4 py-4 border-t border-gray-800">
         <button
           onClick={handleLogout}
-          className="w-full py-2 px-3 rounded-md flex items-center space-x-3 hover:bg-red-600 transition"
+          className="w-full py-4 px-4 rounded-xl flex items-center space-x-3 text-gray-500 hover:text-red-500 hover:bg-red-500/5 transition-all group"
         >
-          <img src={logoutIcon} alt="logout" className="w-5 h-5" />
-          <span>Logout</span>
+          <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          <span className="font-bold text-xs uppercase tracking-widest">Exit System</span>
         </button>
       </div>
-      <img src={closeIcon} alt="icon" onClick={()=>setIsSideBarOpen(!isSideBarOpen)} className="h-fit w-fit absolute top-0 right-4 mt-4 block md:hidden" />
     </aside>
   );
 };
