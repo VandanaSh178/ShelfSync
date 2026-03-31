@@ -1,6 +1,8 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import { useDispatch } from 'react-redux';
+import { getUser } from './store/slices/authSlice';
 
 // Pages
 import Home from './pages/Home';
@@ -9,45 +11,24 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OTPVerification from "./pages/OTPVerify";
-import AdminDashboard from "./components/AdminDashBoard"; // The command center
-
-// Protection Components
-// import ProtectedRoute from "./components/ProtectedRoute";
-// import AdminRoute from "./components/AdminRoute"; // For Librarian/Admin access
-
-import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
-import { getUser } from './store/slices/authSlice';
+import AdminDashboard from "./components/AdminDashBoard";
 
 const App = () => {
   const dispatch = useDispatch();
 
-useEffect(() => {
-  // Silent check to see if user has an active session cookie
-  dispatch(getUser());
-}, [dispatch]);
+  useEffect(() => {
+    // Check for active session on mount
+    dispatch(getUser());
+  }, [dispatch]);
+
   return (
     <Router>
       <Routes>
-        🏠 USER ACCESS */
-        { <Route 
-          path="/" 
-          element={
-            // <ProtectedRoute>
-              <Home />
-            // </ProtectedRoute>
-          } 
-        /> }
+        {/* 🏠 USER ACCESS */}
+        <Route path="/" element={<Home />} />
 
         {/* 🛠️ ADMIN ACCESS */}
-        {<Route 
-          path="/admin/dashboard" 
-          element={
-            // <AdminRoute>
-               <AdminDashboard />
-            // </AdminRoute>
-          } 
-        />}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
 
         {/* 🔓 PUBLIC GATES */}
         <Route path="/login" element={<Login />} />
@@ -56,14 +37,12 @@ useEffect(() => {
         <Route path="/otp-verification/:email" element={<OTPVerification />} />
         <Route path="/password/reset/:token" element={<ResetPassword />} />
         
-        {/* Redirect unknown paths to Home (which then checks auth) */}
+        {/* Wildcard Redirect */}
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
 
-      {/* Global Notification Terminal */}
       <Toaster 
-        position="bottom-right" // Often cleaner for desktop-heavy admin apps
-        reverseOrder={false}
+        position="bottom-right"
         toastOptions={{
           duration: 4000,
           style: {
@@ -75,7 +54,7 @@ useEffect(() => {
             textTransform: 'uppercase',
             letterSpacing: '0.2em',
             borderRadius: '0px',
-            borderLeft: '4px solid #f97316', // Orange accent for your brand
+            borderLeft: '4px solid #f97316',
           },
         }}
       />

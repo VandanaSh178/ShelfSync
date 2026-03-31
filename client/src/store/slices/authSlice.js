@@ -1,11 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
-import API from "../../services/api"; 
 
 const initialState = {
   loading: false,
   user: null,
-  allUsers: [], 
+  allUsers: [],
   error: null,
   message: null,
   isAuthenticated: false,
@@ -13,7 +12,7 @@ const initialState = {
 
 const authSlice = createSlice({
   name: "auth",
-  initialState: initialState, // ✅ Fixed: Added colon and fixed syntax
+  initialState,
   reducers: {
     // REQUESTS
     registerRequest: (state) => {
@@ -48,7 +47,7 @@ const authSlice = createSlice({
       state.loading = true;
       state.error = null;
       state.message = null;
-    },  
+    },
     loginSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload.user;
@@ -77,16 +76,19 @@ const authSlice = createSlice({
     getUserRequest: (state) => {
       state.loading = true;
       state.error = null;
-    },  
+    },
     getUserSuccess: (state, action) => {
       state.loading = false;
       state.user = action.payload;
       state.isAuthenticated = true;
     },
     getUserFailure: (state, action) => {
-      state.loading = false;
-      state.error = action.payload;
-    },
+  state.loading = false;
+  state.isAuthenticated = false;
+  state.user = null;
+  // Do NOT set state.error = action.payload here 
+  // if you don't want a toast to pop up every time a guest visits the site.
+},
     forgotPasswordRequest: (state) => {
       state.loading = true;
       state.error = null;
@@ -126,18 +128,18 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
-    
+
     resetAuthSlice: (state) => {
       state.loading = false;
-      state.user = null;
       state.error = null;
       state.message = null;
-      state.isAuthenticated = false;
     },
+    clearAllErrors: (state) => {
+      state.error = null;
+    }
   },
 });
 
-// ✅ Fixed: Exported names now match the reducer names exactly
 export const {
   registerRequest,
   registerSuccess,
@@ -163,140 +165,159 @@ export const {
   updatePasswordRequest,
   updatePasswordSuccess,
   updatePasswordFailure,
-  resetAuthSlice
+  resetAuthSlice,
+  clearAllErrors
 } = authSlice.actions;
 
 ////////////////////////////////////////////////////////
 // 🚀 ASYNC THUNKS
 ////////////////////////////////////////////////////////
 
-// 2. REGISTER
-export const register = (userData) => async (dispatch)=>{
-  dispatch(registerRequest());
-  await axios.post("/auth/register", userData,{
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => { dispatch(registerSuccess({ message: response.data.message })); })
-  .catch((error) => {
-    dispatch(registerFailure(error.response?.data?.message || "Registration failed"));
-  });
-}
+const BASE_URL = "http://localhost:4000/api/auth";
 
-// 3. OTP VERIFICATION
-export const otpVerification = (email, otp) => async (dispatch) => {
-  dispatch(otpVerificationRequest());
-  await axios.post("/auth/otp-verify", { email, otp }, {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(otpVerificationSuccess({ user: response.data.user, message: response.data.message }));
-  })
-  .catch((error) => {
+// 1. REGISTER
+// Inside authSlice.js
+export const register = (userData) => async (dispatch) => {
+  try {
+    dispatch(registerRequest());
+    
+    // Ensure userData is a clean object { name, email, password }
+    const { data } = await axios.post("http://localhost:4000/api/auth/register", userData, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+
+    dispatch(registerSuccess({ message: data.message }));
+  } catch (error) {
+    // This captures specific backend messages like "Too many attempts"
+    const errorMessage = error.response?.data?.message || "Registration failed";
+    dispatch(registerFailure(errorMessage));
+  }
+};
+
+// 2. OTP VERIFICATION
+// 2. OTP VERIFICATION
+export const otpVerification = (otpData) => async (dispatch) => {
+  try {
+    dispatch(otpVerificationRequest());
+    
+    // ✅ FIX: Spread otpData or send it directly so the keys 
+    // email and otp are at the top level of req.body
+    const { data } = await axios.post(`${BASE_URL}/verify-otp`, otpData, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    
+    dispatch(otpVerificationSuccess({ user: data.user, message: data.message }));
+  } catch (error) {
     dispatch(otpVerificationFailure(error.response?.data?.message || "OTP verification failed"));
-  });
+  }
 };
 
+// 3. LOGIN
 export const loginUser = (credentials) => async (dispatch) => {
-  dispatch(loginRequest());
-  await axios.post("/auth/login", credentials, {  
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(loginSuccess({ user: response.data.user, message: response.data.message }));
-  })
-  .catch((error) => {
+  try {
+    dispatch(loginRequest());
+    const { data } = await axios.post(`${BASE_URL}/login`, credentials, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    dispatch(loginSuccess({ user: data.user, message: data.message }));
+  } catch (error) {
     dispatch(loginFailure(error.response?.data?.message || "Login failed"));
-  });
+  }
 };
+
+// 4. LOGOUT
+// Inside authSlice.js
+
+// Inside authSlice.js
 
 export const logoutUser = () => async (dispatch) => {
-  dispatch(logoutRequest());
-  await axios.post("/auth/logout", {}, {  
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
+  try {
+    dispatch(logoutRequest());
+
+    // ✅ FIX: Use axios.get to match your backend router.get
+    // Ensure BASE_URL is "http://localhost:4000/api/auth"
+    const { data } = await axios.get(`${BASE_URL}/logout`, { 
+      withCredentials: true 
+    });
+
     dispatch(logoutSuccess());
-    dispatch(resetAuthSlice()); 
-  })
-  .catch((error) => {
-    dispatch(logoutFailure(error.response?.data?.message || "Logout failed"));
-  });
+    dispatch(resetAuthSlice());
+
+    // ✅ REDIRECT: Force the browser to the login page after state is cleared
+    window.location.href = "/login";
+
+  } catch (error) {
+    // If it's still 404, check if your backend route is actually "/logout" 
+    // or if it's something else like "/user/logout"
+    const errorMessage = error.response?.data?.message || "Logout failed";
+    dispatch(logoutFailure(errorMessage));
+  }
 };
 
+// 5. GET USER DETAILS
 export const getUser = () => async (dispatch) => {
-  dispatch(getUserRequest());
-  await axios.get("/auth/me", {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(getUserSuccess(response.data.user));
-  })
-  .catch((error) => {
-    dispatch(getUserFailure(error.response?.data?.message || "Failed to fetch user data"));
-  });
+  try {
+    dispatch(getUserRequest());
+    const { data } = await axios.get("http://localhost:4000/api/auth/me", {
+      withCredentials: true, 
+    });
+    dispatch(getUserSuccess(data.user));
+  } catch (error) {
+    // ✅ THE SILENT FIX
+    // If the status is 401, the user is simply not logged in.
+    // We do NOT dispatch a failure, so no error toast appears.
+    if (error.response?.status === 401) {
+      dispatch(resetAuthSlice()); 
+    } else {
+      // Only show an actual error if the server is down or something is broken
+      dispatch(getUserFailure(error.response?.data?.message || "Session expired"));
+    }
+  }
 };
 
+// 6. FORGOT PASSWORD
 export const forgotPassword = (email) => async (dispatch) => {
-  dispatch(forgotPasswordRequest());
-  await axios.post("/auth/forgot-password", { email }, {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(forgotPasswordSuccess({ message: response.data.message }));
-  }) // ✅ Fixed: Added missing brace
-  .catch((error) => {
-    dispatch(forgotPasswordFailure(error.response?.data?.message || "Password reset failed"));
-  }); // ✅ Fixed: Added missing parenthesis
-};  
-
-export const resetPassword = (token, newPassword) => async (dispatch) => {
-  dispatch(resetPasswordRequest());
-  await axios.post("/auth/reset-password", { token, newPassword }, {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(resetPasswordSuccess({ message: response.data.message }));
-  })
-  .catch((error) => {
-    dispatch(resetPasswordFailure(error.response?.data?.message || "Password reset failed"));
-  });
+  try {
+    dispatch(forgotPasswordRequest());
+    const { data } = await axios.post(`${BASE_URL}/password/forgot`, { email }, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    dispatch(forgotPasswordSuccess({ message: data.message }));
+  } catch (error) {
+    dispatch(forgotPasswordFailure(error.response?.data?.message || "Password reset request failed"));
+  }
 };
 
-export const updatePassword = (currentPassword, newPassword) => async (dispatch) => {
-  dispatch(updatePasswordRequest());
-  await axios.put("/auth/update-password", { currentPassword, newPassword }, {
-    withCredentials: true,
-    headers: {
-      "Content-Type": "application/json",
-    },
-  })
-  .then((response) => {
-    dispatch(updatePasswordSuccess({ message: response.data.message }));
-  })
-  .catch((error) => {
+// 7. RESET PASSWORD
+export const resetPassword = (token, passwords) => async (dispatch) => {
+  try {
+    dispatch(resetPasswordRequest());
+    const { data } = await axios.put(`${BASE_URL}/password/reset/${token}`, passwords, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    dispatch(resetPasswordSuccess({ message: data.message }));
+  } catch (error) {
+    dispatch(resetPasswordFailure(error.response?.data?.message || "Password reset failed"));
+  }
+};
+
+// 8. UPDATE PASSWORD
+export const updatePassword = (passwords) => async (dispatch) => {
+  try {
+    dispatch(updatePasswordRequest());
+    const { data } = await axios.put(`${BASE_URL}/password/update`, passwords, {
+      withCredentials: true,
+      headers: { "Content-Type": "application/json" },
+    });
+    dispatch(updatePasswordSuccess({ message: data.message }));
+  } catch (error) {
     dispatch(updatePasswordFailure(error.response?.data?.message || "Password update failed"));
-  });
+  }
 };
 
 export default authSlice.reducer;

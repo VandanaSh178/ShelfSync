@@ -10,7 +10,7 @@ const initialState = {
 };
 
 const popUpSlice = createSlice({
-  name: "popups",
+  name: "popup",
   initialState,
   reducers: {
     toggleAddNewAdminPopup: (state) => {
