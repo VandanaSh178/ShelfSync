@@ -19,12 +19,18 @@ export const app = express();
 // connectDB();
 
 // ✅ CORS
+// ✅ CORS - Robust Configuration
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL,
+    // Fallback to localhost if env variable isn't loading
+    origin: process.env.FRONTEND_URL || "http://localhost:5173", 
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    // Include the custom timestamp header you added to your API.js
+    allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
   })
 );
+
 
 // ✅ Middlewares
 app.use(cookieParser());
