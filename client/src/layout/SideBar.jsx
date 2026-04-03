@@ -19,6 +19,7 @@ import {
 import logo_with_title from "../assets/logo-with-title.png";
 import { toggleAddNewAdminPopup } from "../store/slices/popUpSlice";
 import AddNewAdmin from "../popups/AddNewAdmin";
+import SettingPopup from "../popups/SettingPopup";
 
 const SideBar = ({
   isSideBarOpen,
@@ -30,8 +31,8 @@ const SideBar = ({
   const navigate = useNavigate();
   
   // Ensure this matches your store.js (e.g., popup: popUpReducer)
-  const { addNewAdminPopup } = useSelector((state) => state.popup); 
-  const { user, error, message } = useSelector((state) => state.auth);
+  const { addNewAdminPopup,settingPopup } = useSelector((state) => state.popup); 
+  const { user, error, message,loading,isAuthenticated } = useSelector((state) => state.auth);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
@@ -158,6 +159,7 @@ const SideBar = ({
 
       {/* Popups */}
       {addNewAdminPopup && <AddNewAdmin />}
+      {settingPopup && <SettingPopup />}
     </> 
   );
 };

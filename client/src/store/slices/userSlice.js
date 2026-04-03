@@ -1,6 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { toggleAddNewAdminPopup } from "./popUpSlice";
 
 const userSlice = createSlice({
   name: "users",
@@ -70,6 +71,7 @@ export const addNewAdmin = (formData) => async (dispatch) => {
     );
     dispatch(addNewAdminSuccess(data.user));
     toast.success(data.message || "Admin Added!");
+    dispatch(toggleAddNewAdminPopup()); // Close the popup after success
   } catch (error) {
     const message = error.response?.data?.message || "Failed to add Admin";
     dispatch(addNewAdminFailure(message));
