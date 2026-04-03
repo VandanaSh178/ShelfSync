@@ -6,6 +6,9 @@ import { connectDB } from "./database/db.js"; // ✅ ADD THIS
 // ✅ LOAD ENV FIRST
 config({ path: "./config/config.env" });
 
+// 2. LOG TO VERIFY (Temporary)
+console.log("Checking Key:", process.env.CLOUDINARY_CLIENT_API);
+
 // ✅ CONNECT DB AFTER ENV
 connectDB(); // ✅ THIS WAS MISSING
 
