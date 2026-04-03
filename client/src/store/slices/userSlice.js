@@ -1,4 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 const userSlice = createSlice({
   name: "users",
@@ -8,9 +10,9 @@ const userSlice = createSlice({
     error: null,
   },
   reducers: {
-    // Example: Admin fetching all registered members
     getUsersRequest: (state) => {
       state.loading = true;
+      state.error = null;
     },
     getUsersSuccess: (state, action) => {
       state.loading = false;
@@ -20,11 +22,59 @@ const userSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    addNewAdminRequest: (state) => {
+      state.loading = true;
+    },
+    addNewAdminSuccess: (state, action) => {
+      state.loading = false;
+      state.allUsers.push(action.payload);
+    },
+    addNewAdminFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
   },
 });
 
-// 1. Named exports for your components/thunks
-export const { getUsersRequest, getUsersSuccess, getUsersFailure } = userSlice.actions;
+export const { 
+  getUsersRequest, getUsersSuccess, getUsersFailure, 
+  addNewAdminRequest, addNewAdminSuccess, addNewAdminFailure 
+} = userSlice.actions;
 
-// ❌ THE MISSING PIECE: The store needs this to manage the state
+// --- Thunks ---
+
+export const getUsers = () => async (dispatch) => {
+  dispatch(getUsersRequest());
+  try {
+    const { data } = await axios.get("http://localhost:4000/api/users/", { 
+      withCredentials: true 
+    });
+    dispatch(getUsersSuccess(data.users));
+  } catch (error) {
+    // 🔥 Safety Check: If server is down, error.response is undefined
+    const message = error.response?.data?.message || "Internal Server Error or Network Issue";
+    dispatch(getUsersFailure(message));
+  }
+};
+
+export const addNewAdmin = (formData) => async (dispatch) => {
+  dispatch(addNewAdminRequest());
+  try {
+    const { data } = await axios.post(
+      "http://localhost:4000/api/users/admin", // matched to your backend router
+      formData,
+      { 
+        withCredentials: true,
+        headers: { "Content-Type": "multipart/form-data" } // For avatar uploads
+      }
+    );
+    dispatch(addNewAdminSuccess(data.user));
+    toast.success(data.message || "Admin Added!");
+  } catch (error) {
+    const message = error.response?.data?.message || "Failed to add Admin";
+    dispatch(addNewAdminFailure(message));
+    toast.error(message);
+  }
+};
+
 export default userSlice.reducer;

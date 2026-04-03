@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { logoutUser, resetAuthSlice } from "../store/slices/authSlice";
-import { toast } from "react-toastify";
+import { toast } from "react-hot-toast"; // Changed to match your Login/Register toast choice
 import { useNavigate } from "react-router-dom";
 
 // Icons
@@ -29,13 +29,14 @@ const SideBar = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   
-  // ✅ Changed state.popUp to state.popups to match slice name
+  // Ensure this matches your store.js (e.g., popup: popUpReducer)
   const { addNewAdminPopup } = useSelector((state) => state.popup); 
   const { user, error, message } = useSelector((state) => state.auth);
 
   const handleLogout = async () => {
     await dispatch(logoutUser());
-    navigate("/login"); // Force redirect to login page
+    // The slice handles the redirect, but this is a safe fallback
+    navigate("/login"); 
   };
 
   const handleNavClick = (component) => {
@@ -60,19 +61,27 @@ const SideBar = ({
     `w-full py-3 px-4 rounded-xl flex items-center space-x-3 transition-all duration-300 group relative ${
       selectedComponent === name 
         ? "bg-orange-500 text-white shadow-lg shadow-orange-500/20" 
-        : "hover:bg-gray-900 text-gray-400 hover:text-white"
+        : "hover:bg-white/5 text-gray-400 hover:text-white"
     }`;
 
   return (
-    <> {/* ✅ Fragment opened here */}
+    <> 
+      {/* MOBILE OVERLAY */}
+      {isSideBarOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[45] md:hidden"
+          onClick={() => setIsSideBarOpen(false)}
+        />
+      )}
+
       <aside
         className={`fixed ${
           isSideBarOpen ? "left-0" : "-left-full"
-        } top-0 z-50 transition-all duration-500 md:relative md:left-0 flex w-72 bg-black text-white flex-col h-screen border-r border-gray-900 shadow-2xl`}
+        } top-0 z-50 transition-all duration-500 md:relative md:left-0 flex w-72 bg-black text-white flex-col h-screen border-r border-white/5 shadow-2xl`}
       >
         <button 
           onClick={() => setIsSideBarOpen(false)}
-          className="absolute top-6 right-6 p-2 bg-gray-900 rounded-lg md:hidden"
+          className="absolute top-6 right-6 p-2 bg-white/5 rounded-lg md:hidden"
         >
           <X className="w-5 h-5 text-gray-400" />
         </button>
@@ -85,67 +94,69 @@ const SideBar = ({
           />
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 overflow-y-auto custom-scrollbar">
-          <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Main Menu</p>
+        <nav className="flex-1 px-4 space-y-2 overflow-y-auto scrollbar-hide">
+          <p className="px-4 text-[9px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4">Core</p>
           
           <button className={navBtn("dashboard")} onClick={() => handleNavClick("dashboard")}>
             <LayoutDashboard className="w-5 h-5" />
-            <span className="font-bold text-xs uppercase tracking-widest">Overview</span>
+            <span className="font-bold text-[11px] uppercase tracking-widest">Dashboard</span>
           </button>
 
           <button className={navBtn("books")} onClick={() => handleNavClick("books")}>
             <Book className="w-5 h-5" />
-            <span className="font-bold text-xs uppercase tracking-widest">Library</span>
+            <span className="font-bold text-[11px] uppercase tracking-widest">Catalog</span>
           </button>
 
           {user?.role === "admin" && (
-            <div className="pt-6 space-y-2">
-              <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Management</p>
+            <div className="pt-8 space-y-2">
+              <p className="px-4 text-[9px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4">Control Plane</p>
               <button className={navBtn("catalog")} onClick={() => handleNavClick("catalog")}>
                 <Library className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest">Inventory</span>
+                <span className="font-bold text-[11px] uppercase tracking-widest">Inventory</span>
               </button>
               <button className={navBtn("users")} onClick={() => handleNavClick("users")}>
                 <Users className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest">Members</span>
+                <span className="font-bold text-[11px] uppercase tracking-widest">User Base</span>
               </button>
               <button 
-                className="w-full py-3 px-4 rounded-xl flex items-center space-x-3 transition-all hover:bg-orange-500/10 text-orange-500 border border-orange-500/20 mt-4"
+                className="w-full py-3 px-4 rounded-xl flex items-center space-x-3 transition-all hover:bg-orange-500 text-orange-500 hover:text-white border border-orange-500/20 mt-6"
                 onClick={() => dispatch(toggleAddNewAdminPopup())}
               >
                 <RiAdminFill className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest text-left">Grant Admin Access</span>
+                <span className="font-bold text-[10px] uppercase tracking-widest text-left">New Admin</span>
               </button>
             </div>
           )}
 
           {user?.role === "user" && (
-            <div className="pt-6">
-              <p className="px-4 text-[10px] uppercase tracking-[0.3em] text-gray-600 font-bold mb-4">Personal</p>
+            <div className="pt-8">
+              <p className="px-4 text-[9px] uppercase tracking-[0.3em] text-gray-500 font-bold mb-4">Personal</p>
               <button className={navBtn("my borrowed books")} onClick={() => handleNavClick("my borrowed books")}>
                 <BookOpenCheck className="w-5 h-5" />
-                <span className="font-bold text-xs uppercase tracking-widest">My Borrows</span>
+                <span className="font-bold text-[11px] uppercase tracking-widest">My Records</span>
               </button>
             </div>
           )}
         </nav>
 
-        <div className="p-4 border-t border-gray-900 space-y-2">
-          <button className={navBtn("settings")} onClick={() => dispatch(toggleAddNewAdminPopup())}>
+        <div className="p-4 border-t border-white/5 space-y-2">
+          {/* Linked to dashboard for now as a safe default */}
+          <button className={navBtn("settings")} onClick={() => handleNavClick("dashboard")}>
             <Settings className="w-5 h-5" />
-            <span className="font-bold text-xs uppercase tracking-widest">Security</span>
+            <span className="font-bold text-[11px] uppercase tracking-widest">Security</span>
           </button>
+          
           <button
             onClick={handleLogout}
-            className="w-full py-4 px-4 rounded-xl flex items-center space-x-3 text-gray-500 hover:text-red-500 hover:bg-red-500/5 transition-all group"
+            className="w-full py-4 px-4 rounded-xl flex items-center space-x-3 text-gray-500 hover:text-red-400 hover:bg-red-500/5 transition-all group mt-2"
           >
             <LogOut className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            <span className="font-bold text-xs uppercase tracking-widest">Exit System</span>
+            <span className="font-bold text-[11px] uppercase tracking-widest">Logout</span>
           </button>
         </div>
       </aside>
 
-      {/* ✅ Popups rendered outside the aside but inside the fragment */}
+      {/* Popups */}
       {addNewAdminPopup && <AddNewAdmin />}
     </> 
   );

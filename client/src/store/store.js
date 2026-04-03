@@ -11,7 +11,7 @@ export const store = configureStore({
     popup: popupReducer,   // UI: Modal & Sidebar visibility
     books: bookReducer,    // Inventory: Catalog & Search
     borrow: borrowReducer, // Transactions: Active Loans & History
-    user: userReducer,     // Registry: Member & Admin Management
+    users: userReducer,     // Registry: Member & Admin Management
   },
   // Adding middleware configuration for high-performance "ShelfSync" operations
   middleware: (getDefaultMiddleware) =>

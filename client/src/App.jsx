@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { getUser } from './store/slices/authSlice';
 
 // Pages
@@ -14,12 +14,17 @@ import OTPVerification from "./pages/OTPVerify";
 import AdminDashboard from "./components/AdminDashBoard";
 
 const App = () => {
+  const {user, isAuthenticated} = useSelector((state) => state.auth);
   const dispatch = useDispatch();
 
   useEffect(() => {
     // Check for active session on mount
     dispatch(getUser());
-  }, [dispatch]);
+    if (isAuthenticated && user?.role === "admin") {
+      console.log("Admin session detected, fetching users...");
+      dispatch(getUsers());
+    }
+  }, []);
 
   return (
     <Router>
