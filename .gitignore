@@ -2,3 +2,8 @@ client/node_modules
 server/node_modules
 server/config
 node_modules/
+
+tmp/
+node_modules/
+.env
+config/config.env
