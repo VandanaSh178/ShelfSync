@@ -12,30 +12,14 @@ BORROW BOOK
 export const borrowBook = catchAsyncErrors(async (req, res, next) => {
   const { bookId } = req.body;
 
-  if (!bookId) {
-    return next(new ErrorHandler("Book ID is required", 400));
-  }
+  if (!bookId) return next(new ErrorHandler("Book ID is required", 400));
 
   const book = await Book.findById(bookId);
+  if (!book) return next(new ErrorHandler("Book not found", 404));
+  if (book.quantity <= 0) return next(new ErrorHandler("Book not available", 400));
 
-  if (!book) {
-    return next(new ErrorHandler("Book not found", 404));
-  }
-
-  if (book.quantity <= 0) {
-    return next(new ErrorHandler("Book not available", 400));
-  }
-
-  // Prevent duplicate borrow
-  const alreadyBorrowed = await Borrow.findOne({
-    user: req.user._id,
-    book: bookId,
-    returned: false,
-  });
-
-  if (alreadyBorrowed) {
-    return next(new ErrorHandler("You already borrowed this book", 400));
-  }
+  const alreadyBorrowed = await Borrow.findOne({ user: req.user._id, book: bookId, returned: false });
+  if (alreadyBorrowed) return next(new ErrorHandler("You already borrowed this book", 400));
 
   const dueDate = new Date();
   dueDate.setDate(dueDate.getDate() + 7);
@@ -50,11 +34,7 @@ export const borrowBook = catchAsyncErrors(async (req, res, next) => {
   book.quantity -= 1;
   await book.save();
 
-  res.status(201).json({
-    success: true,
-    message: "Book borrowed successfully",
-    borrow,
-  });
+  res.status(201).json({ success: true, message: "Book borrowed successfully", borrow });
 });
 
 /*
@@ -166,3 +146,4 @@ export const getBorrowStats = catchAsyncErrors(async (req, res, next) => {
     activeBorrowed: active,
   });
 });
+

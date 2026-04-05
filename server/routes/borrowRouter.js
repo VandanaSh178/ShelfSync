@@ -10,6 +10,8 @@ import {
   getBorrowStats,
 } from "../controllers/borrowController.js";
 
+console.log("Is borrowBook a function?", typeof borrowBook); // Check your terminal for this!
+
 const router = express.Router();
 
 /*

@@ -75,11 +75,11 @@ borrowSchema.index(
 
 
 // 🚀 Auto-set returnDate when returned
-borrowSchema.pre("save", function (next) {
+// ✅ Promise-based - no next parameter needed
+borrowSchema.pre("save", function () {
   if (this.isModified("returned") && this.returned === true) {
     this.returnDate = new Date();
   }
-  next();
 });
 
 export const Borrow = mongoose.model("Borrow", borrowSchema);

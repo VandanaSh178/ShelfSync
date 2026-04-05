@@ -1,6 +1,8 @@
-const catchAsyncErrors = (theFunc) => {
-  return function (req, res, next) {
-    Promise.resolve(theFunc(req, res, next)).catch((err) => next(err));
+const catchAsyncErrors = (theFunction) => {
+  return (req, res, next) => {
+    // We explicitly wrap the function call in Promise.resolve
+    // to ensure 'next' is passed correctly to the error handler.
+    Promise.resolve(theFunction(req, res, next)).catch(next);
   };
 };
 
