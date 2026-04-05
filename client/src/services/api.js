@@ -1,7 +1,7 @@
 import axios from "axios";
 import toast from "react-hot-toast";
-// import { store } from "../store/store"; // Import store to dispatch global actions
-// import { logout } from "../store/slices/authSlice";
+import { store } from "../store/store"; // Import store to dispatch global actions
+import { logout } from "../store/slices/authSlice";
 
 const API = axios.create({
   // Dynamic baseURL based on environment

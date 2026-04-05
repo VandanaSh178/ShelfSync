@@ -12,6 +12,7 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OTPVerification from "./pages/OTPVerify";
 import AdminDashboard from "./components/AdminDashBoard";
+import { fetchBooks } from './store/slices/bookSlice';
 
 const App = () => {
   const {user, isAuthenticated} = useSelector((state) => state.auth);
@@ -20,6 +21,7 @@ const App = () => {
   useEffect(() => {
     // Check for active session on mount
     dispatch(getUser());
+    dispatch(fetchBooks()); // Ensure we have the latest user data
     if (isAuthenticated && user?.role === "admin") {
       console.log("Admin session detected, fetching users...");
       dispatch(getUsers());

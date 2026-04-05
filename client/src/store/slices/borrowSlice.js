@@ -1,28 +1,146 @@
 import { createSlice } from "@reduxjs/toolkit";
+import axios from "axios";
 
 const borrowSlice = createSlice({
   name: "borrow",
   initialState: {
     myBorrows: [],
-    allLoans: [], // For Admin view
+    allBorrows: [], 
     loading: false,
     error: null,
+    message: null,
   },
   reducers: {
-    // Example reducers
-    getBorrowsRequest: (state) => {
+    // --- Actions for My Borrows (User) ---
+    fetchMyBorrowsRequest: (state) => {
       state.loading = true;
+      state.error = null;
     },
-    getBorrowsSuccess: (state, action) => {
+    fetchMyBorrowsSuccess: (state, action) => {
+      state.loading = false;  
+      state.myBorrows = action.payload; // payload: data.borrows
+    },
+    fetchMyBorrowsFailure: (state, action) => {
       state.loading = false;
-      state.myBorrows = action.payload;
+      state.error = action.payload;
     },
-    // ... other reducers
+
+    // --- Actions for All Borrows (Admin) ---
+    fetchAllBorrowsRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+    },
+    fetchAllBorrowsSuccess: (state, action) => {
+      state.loading = false;  
+      state.allBorrows = action.payload; // payload: data.allBorrows
+    },
+    fetchAllBorrowsFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    // --- Borrowing Logic ---
+    recordBookRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.message = null;
+    },
+    recordBookSuccess: (state, action) => {
+      state.loading = false;
+      state.message = action.payload; 
+    },
+    recordBookFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    // --- Returning Logic ---
+    returnBookRequest: (state) => {
+      state.loading = true;
+      state.error = null;
+      state.message = null;
+    },
+    returnBookSuccess: (state, action) => {
+      state.loading = false;
+      state.message = action.payload;
+    },
+    returnBookFailure: (state, action) => {
+      state.loading = false;
+      state.error = action.payload;
+    },
+
+    resetBorrowSlice: (state) => {
+      state.loading = false;
+      state.error = null;
+      state.message = null;
+    },
   },
 });
 
-// 1. Export actions for your components
-export const { getBorrowsRequest, getBorrowsSuccess } = borrowSlice.actions;
+export const { 
+  fetchMyBorrowsRequest, fetchMyBorrowsSuccess, fetchMyBorrowsFailure,
+  recordBookRequest, recordBookSuccess, recordBookFailure,
+  fetchAllBorrowsRequest, fetchAllBorrowsSuccess, fetchAllBorrowsFailure,
+  returnBookRequest, returnBookSuccess, returnBookFailure,
+  resetBorrowSlice
+} = borrowSlice.actions;
 
-// ❌ This is the missing piece the store is looking for!
+// --- Thunks (API Calls) ---
+
+// 1. Fetch User's Active Borrows
+export const fetchMyBorrows = () => async (dispatch) => {
+  dispatch(fetchMyBorrowsRequest());
+  try {
+    const { data } = await axios.get("http://localhost:4000/api/borrow/my-borrows", { withCredentials: true });
+    // Note: Matches 'borrows' key from your getBorrowedBooks controller
+    dispatch(fetchMyBorrowsSuccess(data.borrows)); 
+  } catch (error) {
+    dispatch(fetchMyBorrowsFailure(error.response?.data?.message || "Failed to load your books"));
+  }
+};
+
+// 2. Fetch All Borrows (Admin)
+export const fetchAllBorrows = () => async (dispatch) => {
+  dispatch(fetchAllBorrowsRequest());
+  try {
+    const { data } = await axios.get("http://localhost:4000/api/borrow/all", { withCredentials: true });
+    dispatch(fetchAllBorrowsSuccess(data.allBorrows));
+  } catch (error) {
+    dispatch(fetchAllBorrowsFailure(error.response?.data?.message || "Admin Error: Failed to load all records"));
+  }
+};
+
+// 3. Borrow a Book
+export const recordBookBorrow = (bookId) => async (dispatch) => {
+  dispatch(recordBookRequest());
+  try {
+    const { data } = await axios.post(
+      "http://localhost:4000/api/borrow/borrow", 
+      { bookId }, 
+      { withCredentials: true }
+    );
+    dispatch(recordBookSuccess(data.message));
+    dispatch(fetchMyBorrows()); // Refresh list immediately
+  } catch (error) {
+    dispatch(recordBookFailure(error.response?.data?.message || "Borrowing failed"));
+  }
+};
+
+// 4. Return a Book
+export const returnBorrowedBook = (borrowId) => async (dispatch) => {
+  dispatch(returnBookRequest());
+  try {
+    // ✅ Matches req.body.borrowId in the fixed controller
+    const { data } = await axios.post(
+      "http://localhost:4000/api/borrow/return", 
+      { borrowId }, 
+      { withCredentials: true }
+    );
+    dispatch(returnBookSuccess(data.message));
+    dispatch(fetchMyBorrows()); // Refresh list immediately
+  } catch (error) {
+    dispatch(returnBookFailure(error.response?.data?.message || "Return failed"));
+  }
+};
+
 export default borrowSlice.reducer;

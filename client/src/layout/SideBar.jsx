@@ -76,10 +76,15 @@ const SideBar = ({
       )}
 
       <aside
-        className={`fixed ${
-          isSideBarOpen ? "left-0" : "-left-full"
-        } top-0 z-50 transition-all duration-500 md:relative md:left-0 flex w-72 bg-black text-white flex-col h-screen border-r border-white/5 shadow-2xl`}
-      >
+  className={`
+    fixed top-0 left-0 z-50 h-screen w-72
+    bg-black text-white flex flex-col
+    border-r border-white/5 shadow-2xl
+    transition-transform duration-500
+    ${isSideBarOpen ? "translate-x-0" : "-translate-x-full"}
+    md:translate-x-0
+  `}
+>
         <button 
           onClick={() => setIsSideBarOpen(false)}
           className="absolute top-6 right-6 p-2 bg-white/5 rounded-lg md:hidden"
