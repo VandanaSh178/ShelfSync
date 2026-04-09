@@ -8,6 +8,7 @@ import {
   getBorrowHistory,
   getOverdueBooks,
   getBorrowStats,
+  getAllBorrows,
 } from "../controllers/borrowController.js";
 
 console.log("Is borrowBook a function?", typeof borrowBook); // Check your terminal for this!
@@ -44,5 +45,8 @@ router.get("/overdue", isAuthenticated, isAuthorized("admin"), getOverdueBooks);
 
 // 📊 Stats
 router.get("/stats", isAuthenticated, isAuthorized("admin"), getBorrowStats);
+
+
+router.get("/all", isAuthenticated, isAuthorized("admin"), getAllBorrows);
 
 export default router;

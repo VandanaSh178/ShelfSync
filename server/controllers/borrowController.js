@@ -147,3 +147,16 @@ export const getBorrowStats = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+export const getAllBorrows = catchAsyncErrors(async (req, res, next) => {
+  const borrows = await Borrow.find()
+    .populate("user", "name email")
+    .populate("book", "title author")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    count: borrows.length,
+    allBorrows: borrows,
+  });
+});
+

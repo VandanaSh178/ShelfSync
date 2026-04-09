@@ -8,6 +8,7 @@ import {
   getAllBooks,
 } from '../controllers/bookController.js';
 
+
 const router = express.Router();
 
 router.post(
@@ -16,6 +17,7 @@ router.post(
   isAuthorized("admin"),
   addBook
 );
+
 router.get("/", isAuthenticated, getAllBooks);
 router.delete("/:id", isAuthenticated, isAuthorized("admin"), deleteBook);
 
