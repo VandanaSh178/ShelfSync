@@ -1,7 +1,7 @@
 import express from "express";
 
 import {
-  getAllUsers,
+  getUsers,
   registerNewAdmin,
 } from "../controllers/userController.js";
 
@@ -23,7 +23,7 @@ router.get(
   "/",
   isAuthenticated,
   isAuthorized("admin"),
-  getAllUsers
+  getUsers
 );
 
 // 👤 Create new admin

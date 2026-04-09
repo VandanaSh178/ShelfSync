@@ -3,6 +3,7 @@ import ErrorHandler from "../middlewares/errorMiddleware.js";
 import { Book } from "../models/bookModel.js";
 import { Borrow } from "../models/borrowModel.js";
 import { calculateFine } from "../utils/fineCalculator.js";
+import User from "../models/userModel.js";
 
 /*
 ================================
@@ -30,6 +31,18 @@ export const borrowBook = catchAsyncErrors(async (req, res, next) => {
     price: book.price,
     dueDate,
   });
+
+  await User.findByIdAndUpdate(req.user._id, {
+  $push: {
+    borrowedBooks: {
+      bookId: book._id,
+      bookTitle: book.title,
+      borrowDate: new Date(),
+      dueDate,
+      returned: false,
+    }
+  }
+});
 
   book.quantity -= 1;
   await book.save();
@@ -60,6 +73,12 @@ export const returnBook = catchAsyncErrors(async (req, res, next) => {
   borrow.fine = fine;
 
   await borrow.save();
+
+  // After borrow.save() in returnBook
+await User.findOneAndUpdate(
+  { _id: borrow.user, "borrowedBooks.bookId": borrow.book },
+  { $set: { "borrowedBooks.$.returned": true } }
+);
 
   const book = await Book.findById(borrow.book);
   if (book) {

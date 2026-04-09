@@ -12,6 +12,7 @@ import borrowRouter from "./routes/borrowRouter.js";
 import userRouter from "./routes/userRouter.js"; // ✅ FIXED
 import { notifyUsers } from "./services/notifyUsers.js";
 import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 export const app = express();
 
@@ -55,6 +56,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowRouter);
 app.use("/api/users", userRouter);
+
+app.use("/api/ai", aiRoutes);
 
 
 notifyUsers(); // ✅ CALL THE FUNCTION TO START NOTIFICATIONS
