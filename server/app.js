@@ -16,15 +16,13 @@ import aiRoutes from "./routes/aiRoutes.js";
 
 export const app = express();
 
-// ✅ DB connect
-// connectDB();
 
 // ✅ CORS
 // ✅ CORS - Robust Configuration
 app.use(
   cors({
     // Fallback to localhost if env variable isn't loading
-    origin: process.env.FRONTEND_URL || "http://localhost:5173", 
+    origin: process.env.FRONTEND_URL || "https://shelfsyncc.netlify.app", 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     // Include the custom timestamp header you added to your API.js
@@ -46,10 +44,6 @@ app.use(
   })
 );
 
-app.use((req, res, next) => {
-  console.log(`${req.method} request to ${req.url}`);
-  next();
-});
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
