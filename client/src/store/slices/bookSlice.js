@@ -60,7 +60,7 @@ export const {
 export const fetchBooks = () => async (dispatch) => {
   dispatch(fetchBooksRequest());
   try {
-    const response = await axios.get("http://localhost:4000/api/books/", { 
+    const response = await axios.get("https://shelfsync-p3eq.onrender.com/api/books/", { 
       withCredentials: true 
     });
     dispatch(fetchBooksSuccess(response.data.books));
@@ -75,7 +75,7 @@ export const addNewBook = (formData) => async (dispatch) => {
   dispatch(addBookRequest());
   try {
     const response = await axios.post(
-      "http://localhost:4000/api/books/admin/add", 
+      "https://shelfsync-p3eq.onrender.com/api/books/admin/add", 
       formData, // Use the correct variable name here
       {
         withCredentials: true,

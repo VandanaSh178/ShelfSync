@@ -99,7 +99,7 @@ export const {
 export const fetchMyBorrows = () => async (dispatch) => {
   dispatch(fetchMyBorrowsRequest());
   try {
-    const { data } = await axios.get("http://localhost:4000/api/borrow/my-borrows", { withCredentials: true });
+    const { data } = await axios.get("https://shelfsync-p3eq.onrender.com/api/borrow/my-borrows", { withCredentials: true });
     // Note: Matches 'borrows' key from your getBorrowedBooks controller
     dispatch(fetchMyBorrowsSuccess(data.borrows)); 
   } catch (error) {
@@ -111,7 +111,7 @@ export const fetchMyBorrows = () => async (dispatch) => {
 export const fetchAllBorrows = () => async (dispatch) => {
   dispatch(fetchAllBorrowsRequest());
   try {
-    const { data } = await axios.get("http://localhost:4000/api/borrow/all", { withCredentials: true });
+    const { data } = await axios.get("https://shelfsync-p3eq.onrender.com/api/borrow/all", { withCredentials: true });
     dispatch(fetchAllBorrowsSuccess(data.allBorrows));
   } catch (error) {
     dispatch(fetchAllBorrowsFailure(error.response?.data?.message || "Admin Error: Failed to load all records"));
@@ -123,7 +123,7 @@ export const recordBookBorrow = (bookId) => async (dispatch) => {
   dispatch(recordBookRequest());
   try {
     const { data } = await axios.post(
-      "http://localhost:4000/api/borrow/borrow", 
+      "https://shelfsync-p3eq.onrender.com/api/borrow/borrow", 
       { bookId }, 
       { withCredentials: true }
     );
@@ -141,7 +141,7 @@ export const returnBorrowedBook = (borrowId) => async (dispatch) => {
   dispatch(returnBookRequest());
   try {
     const { data } = await axios.put(
-      `http://localhost:4000/api/borrow/return/${borrowId}`, // ✅ borrowId in URL
+      `https://shelfsync-p3eq.onrender.com/api/borrow/return/${borrowId}`, // ✅ borrowId in URL
       {},                                                     // ✅ empty body
       { withCredentials: true }
     );
@@ -154,7 +154,7 @@ export const returnBorrowedBook = (borrowId) => async (dispatch) => {
 
 export const fetchBorrowHistory = () => async (dispatch) => {
   try {
-    const { data } = await axios.get("http://localhost:4000/api/borrow/borrow-history", { withCredentials: true });
+    const { data } = await axios.get("https://shelfsync-p3eq.onrender.com/api/borrow/borrow-history", { withCredentials: true });
     dispatch(fetchBorrowHistorySuccess(data.history));
   } catch (error) {
     console.error("Failed to fetch borrow history:", error);

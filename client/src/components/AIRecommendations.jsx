@@ -32,7 +32,7 @@ const AIRecommendations = () => {
 
   try {
     // ✅ Call your own backend instead of Anthropic directly
-    const response = await fetch("http://localhost:4000/api/ai/recommend", {
+    const response = await fetch("https://shelfsync-p3eq.onrender.com/api/ai/recommend", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include", // ✅ sends auth cookie
