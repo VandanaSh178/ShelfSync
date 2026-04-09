@@ -1,11 +1,13 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { toggleRecordBookPopup } from "./popUpSlice";
 
 const borrowSlice = createSlice({
   name: "borrow",
   initialState: {
     myBorrows: [],
     allBorrows: [], 
+    borrowHistory:[],
     loading: false,
     error: null,
     message: null,
@@ -68,6 +70,11 @@ const borrowSlice = createSlice({
       state.loading = false;
       state.error = action.payload;
     },
+    fetchBorrowHistorySuccess: (state, action) => {
+      state.borrowHistory = action.payload;
+    },
+
+
 
     resetBorrowSlice: (state) => {
       state.loading = false;
@@ -82,6 +89,7 @@ export const {
   recordBookRequest, recordBookSuccess, recordBookFailure,
   fetchAllBorrowsRequest, fetchAllBorrowsSuccess, fetchAllBorrowsFailure,
   returnBookRequest, returnBookSuccess, returnBookFailure,
+  fetchBorrowHistorySuccess,
   resetBorrowSlice
 } = borrowSlice.actions;
 
@@ -121,25 +129,35 @@ export const recordBookBorrow = (bookId) => async (dispatch) => {
     );
     dispatch(recordBookSuccess(data.message));
     dispatch(fetchMyBorrows()); // Refresh list immediately
+    dispatch(toggleRecordBookPopup()); // Close popup on success
   } catch (error) {
     dispatch(recordBookFailure(error.response?.data?.message || "Borrowing failed"));
   }
 };
 
 // 4. Return a Book
+// 4. Return a Book
 export const returnBorrowedBook = (borrowId) => async (dispatch) => {
   dispatch(returnBookRequest());
   try {
-    // ✅ Matches req.body.borrowId in the fixed controller
-    const { data } = await axios.post(
-      "http://localhost:4000/api/borrow/return", 
-      { borrowId }, 
+    const { data } = await axios.put(
+      `http://localhost:4000/api/borrow/return/${borrowId}`, // ✅ borrowId in URL
+      {},                                                     // ✅ empty body
       { withCredentials: true }
     );
     dispatch(returnBookSuccess(data.message));
-    dispatch(fetchMyBorrows()); // Refresh list immediately
+    dispatch(fetchMyBorrows());
   } catch (error) {
     dispatch(returnBookFailure(error.response?.data?.message || "Return failed"));
+  }
+};
+
+export const fetchBorrowHistory = () => async (dispatch) => {
+  try {
+    const { data } = await axios.get("http://localhost:4000/api/borrow/borrow-history", { withCredentials: true });
+    dispatch(fetchBorrowHistorySuccess(data.history));
+  } catch (error) {
+    console.error("Failed to fetch borrow history:", error);
   }
 };
 

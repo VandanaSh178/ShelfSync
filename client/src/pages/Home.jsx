@@ -20,14 +20,14 @@ const Home = () => {
       
       {/* SIDEBAR */}
       <Sidebar 
-        isSidebarOpen={isSidebarOpen} 
-        setIsSidebarOpen={setIsSidebarOpen} 
+        isSideBarOpen={isSidebarOpen} 
+        setIsSideBarOpen={setIsSidebarOpen} 
         setSelectedComponent={setSelectedComponent} 
         selectedComponent={selectedComponent}
       />
 
       {/* MAIN - only this scrolls */}
-      <div className="flex-1 flex flex-col h-screen overflow-y-auto ml-0 md:ml-72">
+      <div className="flex-1 flex flex-col h-screen overflow-y-auto ml-0 md:ml-64">
 
         <Header/>
         

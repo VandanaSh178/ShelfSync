@@ -1,5 +1,7 @@
 import { createSlice } from "@reduxjs/toolkit";
 import axios from "axios";
+import { toggleAddBookPopup } from "./popUpSlice";
+import toast from "react-hot-toast";
 
 const bookSlice = createSlice({
   name: "books",
@@ -81,6 +83,9 @@ export const addNewBook = (formData) => async (dispatch) => {
       }
     );
     dispatch(addBookSuccess(response.data.message));
+    toast.success(response.data.message);
+    dispatch(toggleAddBookPopup()); // Close the popup after successful addition
+    dispatch(fetchBooks()); // Refresh the book list to show the new book
   } catch (error) {
     const message = error.response?.data?.message || "Failed to add book";
     dispatch(addBookFailure(message));

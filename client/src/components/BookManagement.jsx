@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { BookA, Search } from "lucide-react";
+import { BookA, Search, Eye, BookOpen } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleReadBookPopup, toggleRecordBookPopup, toggleAddBookPopup } from "../store/slices/popUpSlice";
 import toast from "react-hot-toast";
 import { fetchAllBorrows, resetBorrowSlice } from "../store/slices/borrowSlice";
 import { fetchBooks, resetBookSlice } from "../store/slices/bookSlice";
 
-// Import your popup components
 import AddBookPopup from "../popups/AddBookPopup";
 import RecordBookPopup from "../popups/RecordBookPopup";
 import ReadBookPopup from "../popups/ReadBookPopup";
@@ -14,29 +13,18 @@ import ReadBookPopup from "../popups/ReadBookPopup";
 const BookManagement = () => {
   const dispatch = useDispatch();
 
-  // 1. Extract State (Safely)
   const { loading, error, message, books = [] } = useSelector((state) => state.books || {});
   const { isAuthenticated, user } = useSelector((state) => state.auth || {});
-  const { 
-    recordBookPopup, 
-    readBookPopup, 
-    addBookPopup 
-  } = useSelector((state) => state.popups || {});
-  
-  const {
-    error: borrowError,
-    message: borrowMessage,
-  } = useSelector((state) => state.borrow || {});
+  const { recordBookPopup, readBookPopup, addBookPopup } = useSelector((state) => state.popups || {});
+  const { error: borrowError, message: borrowMessage } = useSelector((state) => state.borrow || {});
 
-  // 2. Local State
-  const [readBook, setReadBook] = useState({}); // ✅ ADDED THIS MISSING LINE
+  const [readBook, setReadBook] = useState({});
   const [borrowBookId, setBorrowBookId] = useState("");
   const [searchedKeyword, setSearchedKeyword] = useState("");
 
-  // 3. Handlers
   const openReadBookPopup = (id) => {
     const book = books.find((b) => b._id === id);
-    setReadBook(book || {}); // ✅ Now this won't crash
+    setReadBook(book || {});
     dispatch(toggleReadBookPopup());
   };
 
@@ -45,7 +33,10 @@ const BookManagement = () => {
     dispatch(toggleRecordBookPopup());
   };
 
-  // 4. Sync State & Toasts
+  useEffect(() => {
+    dispatch(fetchBooks());
+  }, [dispatch]);
+
   useEffect(() => {
     if (message || borrowMessage) {
       toast.success(message || borrowMessage);
@@ -61,7 +52,6 @@ const BookManagement = () => {
     }
   }, [dispatch, message, error, borrowMessage, borrowError, user]);
 
-  // 5. Search Logic
   const searchedBooks = books.filter((book) =>
     book.title?.toLowerCase().includes(searchedKeyword.toLowerCase())
   );
@@ -69,6 +59,8 @@ const BookManagement = () => {
   return (
     <>
       <main className="flex-1 p-6 bg-gray-50 min-h-screen">
+
+        {/* Header */}
         <header className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
@@ -88,7 +80,6 @@ const BookManagement = () => {
                 className="pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none w-full sm:w-64 transition-all"
               />
             </div>
-
             {isAuthenticated && user?.role === "admin" && (
               <button
                 onClick={() => dispatch(toggleAddBookPopup())}
@@ -100,50 +91,119 @@ const BookManagement = () => {
           </div>
         </header>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {searchedBooks.length > 0 ? (
-            searchedBooks.map((book) => (
-              <div key={book._id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
-                <div className="aspect-[3/4] mb-4 overflow-hidden rounded-xl bg-gray-100">
-                  <img 
-                    src={book.coverImage?.url || "https://placehold.co/150x200"} 
-                    alt={book.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    onError={(e) => { e.target.src = "https://placehold.co/150x200" }}
-                  />
-                </div>
-                <h3 className="font-bold text-gray-900 truncate">{book.title}</h3>
-                <p className="text-sm text-gray-500 mb-4">{book.author}</p>
-                
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => openReadBookPopup(book._id)}
-                    className="flex-1 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-bold hover:bg-gray-200 transition-colors"
-                  >
-                    DETAILS
-                  </button>
-                  <button 
-                    onClick={() => openRecordBookPopup(book._id)}
-                    className="flex-1 py-2 bg-orange-500 text-white rounded-lg text-xs font-bold hover:bg-orange-600 transition-colors"
-                  >
-                    BORROW
-                  </button>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full py-20 text-center">
-              <BookA className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-400">No books found matching your search.</p>
-            </div>
-          )}
+        {/* Table */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-gray-50 border-b border-gray-100">
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">#</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Book</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Author</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Category</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Price</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Quantity</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Status</th>
+                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {searchedBooks.length > 0 ? (
+                  searchedBooks.map((book, index) => (
+                    <tr key={book._id} className="hover:bg-gray-50 transition-colors">
+
+                      {/* # */}
+                      <td className="px-6 py-4 text-gray-400 font-mono text-xs">
+                        {index + 1}
+                      </td>
+
+                      {/* Book */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={book.coverImage?.url || "https://placehold.co/40x55"}
+                            alt={book.title}
+                            className="w-9 h-12 object-cover rounded-md flex-shrink-0"
+                            onError={(e) => { e.target.src = "https://placehold.co/40x55"; }}
+                          />
+                          <p className="font-bold text-gray-900 line-clamp-1 max-w-[160px]">{book.title}</p>
+                        </div>
+                      </td>
+
+                      {/* Author */}
+                      <td className="px-6 py-4 text-gray-500 text-xs">{book.author}</td>
+
+                      {/* Category */}
+                      <td className="px-6 py-4">
+                        <span className="text-[10px] bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-bold uppercase">
+                          {book.category}
+                        </span>
+                      </td>
+
+                      {/* Price */}
+                      <td className="px-6 py-4 text-gray-700 font-semibold">
+                        ₹{book.price}
+                      </td>
+
+                      {/* Quantity */}
+                      <td className="px-6 py-4 text-gray-700">
+                        {book.quantity}
+                      </td>
+
+                      {/* Status */}
+                      <td className="px-6 py-4">
+                        {book.quantity > 0 ? (
+                          <span className="text-[10px] bg-green-100 text-green-600 px-3 py-1 rounded-full font-bold uppercase">
+                            Available
+                          </span>
+                        ) : (
+                          <span className="text-[10px] bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold uppercase">
+                            Out of Stock
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => openReadBookPopup(book._id)}
+                            className="p-2 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-orange-500 text-gray-400 transition-all"
+                            title="View Details"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => openRecordBookPopup(book._id)}
+                            disabled={book.quantity === 0}
+                            className="p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
+                            title="Borrow Book"
+                          >
+                            <BookOpen className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={8} className="py-20 text-center">
+                      <BookA className="w-12 h-12 text-gray-200 mx-auto mb-3" />
+                      <p className="text-gray-400">No books found matching your search.</p>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
+
       </main>
 
-      {/* ✅ Popup Logic */}
-      {addBookPopup && <AddBookPopup/>}
-      {recordBookPopup && <RecordBookPopup bookId={borrowBookId}/>}
-      {readBookPopup && <ReadBookPopup book={readBook}/>}
+      {addBookPopup && <AddBookPopup />}
+      {recordBookPopup && <RecordBookPopup bookId={borrowBookId} />}
+      {readBookPopup && <ReadBookPopup book={readBook} />}
     </>
   );
 };
