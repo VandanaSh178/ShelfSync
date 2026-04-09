@@ -9,6 +9,8 @@ import Catalog from '../components/Catalog';
 import Users from '../components/Users';
 import MyBorrowedBooks from '../components/MyBorrowedBooks';
 import Header from '../layout/Header';
+import AIRecommendations from '../components/AIRecommendations';
+
 
 const Home = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -59,6 +61,8 @@ const Home = () => {
                   return user?.role === "admin" ? <Users /> : null;
                 case "my borrowed books":
                   return <MyBorrowedBooks />;
+                case "ai":
+                  return <AIRecommendations />;
                 default:
                   return user?.role === "user" ? <UserDashboard /> : <AdminDashboard />;
               }

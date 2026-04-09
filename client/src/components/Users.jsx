@@ -101,7 +101,7 @@ const Users = () => {
 
                     {/* Books */}
                     <td className="px-6 py-4">
-                      <span className="text-gray-700 font-semibold">{user.borrowedBooks?.length || 0}</span>
+                      <span className="text-gray-700 font-semibold">{user.activeBorrows?? 0}</span>
                       <span className="text-gray-400 text-xs ml-1">borrowed</span>
                     </td>
 

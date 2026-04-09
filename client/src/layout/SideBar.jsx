@@ -13,6 +13,7 @@ import AddNewAdmin from "../popups/AddNewAdmin";
 import SettingPopup from "../popups/SettingPopup";
 // Add to imports at the top:
 import { toggleSettingPopup } from "../store/slices/popUpSlice";
+import { Sparkles } from "lucide-react";
 
 const SideBar = ({
   isSideBarOpen,
@@ -215,6 +216,7 @@ const SideBar = ({
           <SectionLabel label="Core" />
           <NavItem name="dashboard" icon={LayoutDashboard} label="Dashboard" />
           <NavItem name="books" icon={Book} label="Catalog" />
+          <NavItem name="ai" icon={Sparkles} label="AI Picks" />
 
           {user?.role === "admin" && (
             <>
