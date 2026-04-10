@@ -9,52 +9,61 @@ import { errorMiddleware } from "./middlewares/errorMiddleware.js";
 import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRouter.js";
 import borrowRouter from "./routes/borrowRouter.js";
-import userRouter from "./routes/userRouter.js"; // ✅ FIXED
+import userRouter from "./routes/userRouter.js";
 import { notifyUsers } from "./services/notifyUsers.js";
 import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
 import aiRoutes from "./routes/aiRoutes.js";
 
 export const app = express();
 
+// ✅ CORS - Multi-origin (supports Netlify, Vercel, and localhost)
+const allowedOrigins = [
+  "https://shelfsyncc.netlify.app",
+  "https://shelf-sync-beta.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
 
-// ✅ CORS
-// ✅ CORS - Robust Configuration
 app.use(
   cors({
-    // Fallback to localhost if env variable isn't loading
-    origin: process.env.FRONTEND_URL || "https://shelf-sync-beta.vercel.app", 
+    origin: function (origin, callback) {
+      // Allow requests with no origin (Postman, curl, mobile apps)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
-    // Include the custom timestamp header you added to your API.js
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
   })
 );
-
 
 // ✅ Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ File Upload FIX (Windows compatible)
+// ✅ File Upload
 app.use(
   expressFileUpload({
     useTempFiles: true,
-    tempFileDir: "./tmp/", // ✅ FIXED
+    tempFileDir: "./tmp/",
   })
 );
-
 
 // ✅ Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowRouter);
 app.use("/api/users", userRouter);
-
 app.use("/api/ai", aiRoutes);
 
+notifyUsers();
+removeUnverifiedAccounts();
 
-notifyUsers(); // ✅ CALL THE FUNCTION TO START NOTIFICATIONS
-removeUnverifiedAccounts(); // ✅ CALL THE FUNCTION TO START ACCOUNT CLEANUP
 // ✅ Error middleware (ALWAYS LAST)
 app.use(errorMiddleware);
