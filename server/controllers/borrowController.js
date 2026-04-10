@@ -47,6 +47,12 @@ export const borrowBook = catchAsyncErrors(async (req, res, next) => {
   book.quantity -= 1;
   await book.save();
 
+  await Notification.create({
+  message: `"${book.title}" was borrowed`,
+  type: "book_borrowed",
+  forRole: "admin",
+});
+
   res.status(201).json({ success: true, message: "Book borrowed successfully", borrow });
 });
 
@@ -80,6 +86,12 @@ await User.findOneAndUpdate(
   { $set: { "borrowedBooks.$.returned": true } }
 );
 
+await Notification.create({
+  message: `A book has been returned`,
+  type: "book_returned",
+  forRole: "admin",
+});
+
   const book = await Book.findById(borrow.book);
   if (book) {
     book.quantity += 1;
@@ -102,7 +114,7 @@ export const getBorrowedBooks = catchAsyncErrors(async (req, res, next) => {
   const borrows = await Borrow.find({
     user: req.user._id,
     returned: false,
-  }).populate("book", "title author");
+  }).populate("book", "title author description price quantity category coverImage");
 
   res.status(200).json({
     success: true,
@@ -120,7 +132,7 @@ export const getBorrowHistory = catchAsyncErrors(async (req, res, next) => {
   const history = await Borrow.find({
     user: req.user._id,
   })
-    .populate("book", "title author")
+    .populate("book", "title author description price quantity category coverImage")
     .sort({ createdAt: -1 });
 
   res.status(200).json({
