@@ -47,18 +47,27 @@ API.interceptors.response.use(
     const message = error.response?.data?.message || "Internal Archive Server Error";
 
     // 1. SESSION EXPIRED / UNAUTHORIZED
-    if (status === 401) {
-      // Auto-purge Redux state and redirect if the session is compromised
-      store.dispatch(logout());
+    // if (status === 401) {
+    //   // Auto-purge Redux state and redirect if the session is compromised
+    //   store.dispatch(logout());
       
-      // Only toast if it's not a login attempt failing
-      if (!error.config.url.includes("/login")) {
-        toast.error("Session De-authorized. Please re-authenticate.", {
-          id: "session-expired", // Prevents duplicate toasts
-          icon: "🔐",
-        });
-      }
-    }
+    //   // Only toast if it's not a login attempt failing
+    //   if (!error.config.url.includes("/login")) {
+    //     toast.error("Session De-authorized. Please re-authenticate.", {
+    //       id: "session-expired", // Prevents duplicate toasts
+    //       icon: "🔐",
+    //     });
+    //   }
+    // }
+
+    if (status === 401) {
+  const url = error.config.url;
+  const isAuthCheck = url.includes("/auth/me") || url.includes("/login");
+  if (!isAuthCheck) {
+    store.dispatch(logout());
+    toast.error("Session expired. Please log in again.", { id: "session-expired" });
+  }
+}
 
     // 2. RATE LIMITING (Too many requests)
     if (status === 429) {
