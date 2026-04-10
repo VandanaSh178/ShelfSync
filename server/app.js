@@ -22,7 +22,7 @@ export const app = express();
 app.use(
   cors({
     // Fallback to localhost if env variable isn't loading
-    origin: process.env.FRONTEND_URL || "https://shelfsyncc.netlify.app", 
+    origin: process.env.FRONTEND_URL || "https://shelf-sync-beta.vercel.app", 
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     // Include the custom timestamp header you added to your API.js
