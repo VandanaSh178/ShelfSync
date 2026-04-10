@@ -6,12 +6,15 @@ import { fetchBooks } from "../store/slices/bookSlice";
 import { Settings, Bell, ChevronDown, BookOpen, LogOut, User, Search, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import ProfilePopup from "../popups/ProfilePopup";
+import { fetchNotifications, markAllNotificationsRead, deleteNotification } from "../store/slices/notificationSlice";
+import { Trash2 } from "lucide-react";
 
 const Header = ({ setSelectedComponent }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
   const { books = [] } = useSelector((state) => state.books);
+  const { notifications, unreadCount, loading } = useSelector((state) => state.notifications);
 
   const [dateTime, setDateTime] = useState({ time: "", date: "" });
   const [scrolled, setScrolled] = useState(false);
@@ -75,6 +78,10 @@ const Header = ({ setSelectedComponent }) => {
     }
   }, [searchQuery, books]);
 
+  useEffect(() => {
+  dispatch(fetchNotifications());
+}, [dispatch]);
+
   const handleLogout = async () => {
     await dispatch(logoutUser());
     navigate("/login");
@@ -83,6 +90,14 @@ const Header = ({ setSelectedComponent }) => {
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "?";
+
+    const typeStyles = {
+  book_added:    { dot: "bg-emerald-500", label: "Added" },
+  book_deleted:  { dot: "bg-red-500",     label: "Deleted" },
+  book_borrowed: { dot: "bg-blue-500",    label: "Borrowed" },
+  book_returned: { dot: "bg-purple-500",  label: "Returned" },
+  overdue:       { dot: "bg-orange-500",  label: "Overdue" },
+};
 
   return (
   <>
@@ -167,27 +182,101 @@ const Header = ({ setSelectedComponent }) => {
           </div>
 
           {/* Notifications */}
-          <div className="relative" ref={notifRef}>
-            <button
-              onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}
-              className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
-            >
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 bg-orange-500 rounded-full" />
-            </button>
+          {/* Notifications */}
+<div className="relative" ref={notifRef}>
+  <button
+    onClick={() => { setNotifOpen(!notifOpen); setProfileOpen(false); }}
+    className="relative p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all"
+  >
+    <Bell className="w-4 h-4" />
+    {unreadCount > 0 && (
+      <span className="absolute top-1 right-1 min-w-[14px] h-[14px] bg-orange-500 rounded-full flex items-center justify-center">
+        <span className="text-white text-[8px] font-black leading-none px-0.5">
+          {unreadCount > 9 ? "9+" : unreadCount}
+        </span>
+      </span>
+    )}
+  </button>
 
-            {notifOpen && (
-              <div className="absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="text-xs font-black uppercase tracking-widest text-gray-700">Notifications</p>
-                </div>
-                <div className="px-4 py-6 text-center">
-                  <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
-                  <p className="text-xs text-gray-400">No new notifications</p>
-                </div>
-              </div>
-            )}
+  {notifOpen && (
+    <div className="absolute right-0 top-full mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
+      
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+        <p className="text-xs font-black uppercase tracking-widest text-gray-700">
+          Notifications
+          {unreadCount > 0 && (
+            <span className="ml-2 px-1.5 py-0.5 bg-orange-100 text-orange-600 rounded-full text-[9px] font-black">
+              {unreadCount} new
+            </span>
+          )}
+        </p>
+        {unreadCount > 0 && (
+          <button
+            onClick={() => dispatch(markAllNotificationsRead())}
+            className="text-[10px] text-orange-500 hover:text-orange-700 font-bold transition-colors"
+          >
+            Mark all read
+          </button>
+        )}
+      </div>
+
+      {/* List */}
+      <div className="max-h-72 overflow-y-auto">
+        {loading ? (
+          <div className="px-4 py-6 text-center">
+            <div className="w-5 h-5 border-2 border-orange-300 border-t-orange-500 rounded-full animate-spin mx-auto" />
           </div>
+        ) : notifications.length === 0 ? (
+          <div className="px-4 py-6 text-center">
+            <Bell className="w-8 h-8 text-gray-200 mx-auto mb-2" />
+            <p className="text-xs text-gray-400">No new notifications</p>
+          </div>
+        ) : (
+          notifications.map((notif) => {
+            const style = typeStyles[notif.type] || { dot: "bg-gray-400" };
+            return (
+              <div
+                key={notif._id}
+                className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 transition-colors ${
+                  !notif.read ? "bg-orange-50/40" : "hover:bg-gray-50"
+                }`}
+              >
+                <span className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${style.dot}`} />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-gray-700 leading-snug">{notif.message}</p>
+                  <p className="text-[10px] text-gray-400 mt-0.5">
+                    {new Date(notif.createdAt).toLocaleDateString("en-US", {
+                      month: "short", day: "numeric",
+                      hour: "2-digit", minute: "2-digit"
+                    })}
+                  </p>
+                </div>
+                <button
+                  onClick={() => dispatch(deleteNotification(notif._id))}
+                  className="text-gray-300 hover:text-red-400 transition-colors flex-shrink-0 mt-0.5"
+                >
+                  <Trash2 className="w-3 h-3" />
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2.5 border-t border-gray-100">
+        <button
+          onClick={() => dispatch(fetchNotifications())}
+          className="w-full text-[10px] text-gray-400 hover:text-gray-600 font-medium transition-colors"
+        >
+          Refresh
+        </button>
+      </div>
+
+    </div>
+  )}
+</div>
 
           {/* Settings */}
           <button

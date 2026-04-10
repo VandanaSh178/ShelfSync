@@ -24,7 +24,7 @@ const SideBar = ({
   const dispatch = useDispatch();
   const navigate = useNavigate();
   // ✅ Fixed: was state.popup, now state.popups
-  const { addNewAdminPopup, settingPopup } = useSelector((state) => state.popups);
+  const { addNewAdminPopup, settingPopup } = useSelector((state) => state.popup);
   const { user, error, message } = useSelector((state) => state.auth);
 
   const handleLogout = async () => {

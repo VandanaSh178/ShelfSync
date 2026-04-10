@@ -4,6 +4,7 @@ import popupReducer from "./slices/popUpSlice";
 import bookReducer from "./slices/bookSlice";
 import borrowReducer from "./slices/borrowSlice";
 import userReducer from "./slices/userSlice";
+import notificationReducer from "./slices/notificationSlice";
 
 export const store = configureStore({
   reducer: {
@@ -12,7 +13,7 @@ export const store = configureStore({
     books: bookReducer,    // Inventory: Catalog & Search
     borrow: borrowReducer, // Transactions: Active Loans & History
     users: userReducer,     // Registry: Member & Admin Management
-    popups: popupReducer,   // UI: Modal & Sidebar visibility (Duplicate key, consider renaming one)
+    notifications: notificationReducer,
   },
   // Adding middleware configuration for high-performance "ShelfSync" operations
   middleware: (getDefaultMiddleware) =>

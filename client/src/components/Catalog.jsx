@@ -9,7 +9,7 @@ import ReturnBookPopup from "../popups/ReturnBookPopup";
 const Catalog = () => {
   const dispatch = useDispatch();
 
-  const { returnBookPopup } = useSelector((state) => state.popups);
+  const { returnBookPopup } = useSelector((state) => state.popup);
   const { loading, error, message, allBorrows = [] } = useSelector((state) => state.borrow);
 
   const [filter, setFilter] = useState("borrowed");
