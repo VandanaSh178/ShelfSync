@@ -2,6 +2,7 @@ import ErrorHandler from '../middlewares/errorMiddleware.js';
 import { Book } from '../models/bookModel.js';
 import { v2 as cloudinary } from 'cloudinary';
 import catchAsyncErrors from '../middlewares/catchAsyncErrors.js';
+import { Notification } from "../models/notificationModel.js";
 
 // ADD BOOK
 export const addBook = catchAsyncErrors(async (req, res, next) => {
@@ -16,7 +17,6 @@ export const addBook = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Book already exists", 400));
   }
 
-  // Handle cover image upload
   let coverImage = {};
   if (req.files && req.files.coverImage) {
     const file = req.files.coverImage;
@@ -40,6 +40,13 @@ export const addBook = catchAsyncErrors(async (req, res, next) => {
     category,
     available: quantity > 0,
     coverImage,
+  });
+
+  await Notification.create({
+    message: `New book added: "${book.title}" by ${book.author}`,
+    type: "book_added",
+    forRole: "all",
+    relatedBook: book._id,
   });
 
   res.status(201).json({
@@ -68,12 +75,17 @@ export const deleteBook = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Book not found", 404));
   }
 
-  // Delete cover image from Cloudinary if exists
   if (book.coverImage?.public_id) {
     await cloudinary.uploader.destroy(book.coverImage.public_id);
   }
 
   await book.deleteOne();
+
+  await Notification.create({
+    message: `Book removed: "${book.title}"`,
+    type: "book_deleted",
+    forRole: "all",
+  });
 
   res.status(200).json({
     success: true,
@@ -81,6 +93,7 @@ export const deleteBook = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+// ADD BULK BOOKS
 export const addBulkBooks = catchAsyncErrors(async (req, res, next) => {
   const books = req.body;
 
