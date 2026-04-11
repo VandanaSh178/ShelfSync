@@ -10,19 +10,15 @@ import authRoutes from "./routes/authRoutes.js";
 import bookRoutes from "./routes/bookRouter.js";
 import borrowRouter from "./routes/borrowRouter.js";
 import userRouter from "./routes/userRouter.js";
-<<<<<<< HEAD
-=======
 import aiRoutes from "./routes/aiRoutes.js";
-import notificationRouter from "./routes/notificationRouter.js"; // ✅ single import
+import notificationRouter from "./routes/notificationRouter.js";
 
->>>>>>> ai-feature
 import { notifyUsers } from "./services/notifyUsers.js";
 import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js";
 
 export const app = express();
 
-<<<<<<< HEAD
-// ✅ CORS - Multi-origin (supports Netlify, Vercel, and localhost)
+// CORS - Multi-origin (supports Netlify, Vercel, and localhost)
 const allowedOrigins = [
   "https://shelfsyncc.netlify.app",
   "https://shelf-sync-beta.vercel.app",
@@ -33,13 +29,8 @@ const allowedOrigins = [
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow requests with no origin (Postman, curl, mobile apps)
       if (!origin) return callback(null, true);
-
-      if (allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
-
+      if (allowedOrigins.includes(origin)) return callback(null, true);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
@@ -48,12 +39,12 @@ app.use(
   })
 );
 
-// ✅ Middlewares
+// Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ✅ File Upload
+// File Upload
 app.use(
   expressFileUpload({
     useTempFiles: true,
@@ -61,38 +52,22 @@ app.use(
   })
 );
 
-// ✅ Routes
-=======
-app.use(cors({
-  origin: process.env.FRONTEND_URL || "http://localhost:5173",
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
-}));
-
-app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(expressFileUpload({ useTempFiles: true, tempFileDir: "./tmp/" }));
-
+// Request Logger
 app.use((req, res, next) => {
   console.log(`${req.method} request to ${req.url}`);
   next();
 });
 
->>>>>>> ai-feature
+// Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/books", bookRoutes);
 app.use("/api/borrow", borrowRouter);
 app.use("/api/users", userRouter);
 app.use("/api/ai", aiRoutes);
-app.use("/api/notifications", notificationRouter); // ✅ actually mounted now
+app.use("/api/notifications", notificationRouter);
 
 notifyUsers();
 removeUnverifiedAccounts();
 
-<<<<<<< HEAD
-// ✅ Error middleware (ALWAYS LAST)
-=======
->>>>>>> ai-feature
+// Error middleware (ALWAYS LAST)
 app.use(errorMiddleware);
