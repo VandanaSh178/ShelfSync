@@ -47,7 +47,7 @@ export const {
 export const getUsers = () => async (dispatch) => {
   dispatch(getUsersRequest());
   try {
-    const { data } = await axios.get("https://shelfsync-p3eq.onrender.com/api/users/", { 
+    const { data } = await axios.get("http://localhost:4000/api/users/", { 
       withCredentials: true 
     });
     dispatch(getUsersSuccess(data.users));
@@ -62,7 +62,7 @@ export const addNewAdmin = (formData) => async (dispatch) => {
   dispatch(addNewAdminRequest());
   try {
     const { data } = await axios.post(
-      "https://shelfsync-p3eq.onrender.com/api/users/admin", // matched to your backend router
+      "http://localhost:4000/api/users/admin", // matched to your backend router
       formData,
       { 
         withCredentials: true,

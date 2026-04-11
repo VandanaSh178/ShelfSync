@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
       // This intercept calls to /api and redirects them to your backend
       '/api': {
-        target: 'https://shelfsync-p3eq.onrender.com',
+        target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
       },
