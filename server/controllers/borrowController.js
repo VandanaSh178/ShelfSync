@@ -4,6 +4,7 @@ import { Book } from "../models/bookModel.js";
 import { Borrow } from "../models/borrowModel.js";
 import { calculateFine } from "../utils/fineCalculator.js";
 import User from "../models/userModel.js";
+import { Notification } from "../models/notificationModel.js";
 
 /*
 ================================
@@ -33,25 +34,25 @@ export const borrowBook = catchAsyncErrors(async (req, res, next) => {
   });
 
   await User.findByIdAndUpdate(req.user._id, {
-  $push: {
-    borrowedBooks: {
-      bookId: book._id,
-      bookTitle: book.title,
-      borrowDate: new Date(),
-      dueDate,
-      returned: false,
+    $push: {
+      borrowedBooks: {
+        bookId: book._id,
+        bookTitle: book.title,
+        borrowDate: new Date(),
+        dueDate,
+        returned: false,
+      }
     }
-  }
-});
+  });
 
   book.quantity -= 1;
   await book.save();
 
   await Notification.create({
-  message: `"${book.title}" was borrowed`,
-  type: "book_borrowed",
-  forRole: "admin",
-});
+    message: `"${book.title}" was borrowed by a user`,
+    type: "book_borrowed",
+    forRole: "admin",
+  });
 
   res.status(201).json({ success: true, message: "Book borrowed successfully", borrow });
 });
@@ -71,31 +72,28 @@ export const returnBook = catchAsyncErrors(async (req, res, next) => {
   }
 
   const returnDate = new Date();
-
   const fine = calculateFine(borrow.dueDate, returnDate);
 
   borrow.returned = true;
   borrow.returnDate = returnDate;
   borrow.fine = fine;
-
   await borrow.save();
 
-  // After borrow.save() in returnBook
-await User.findOneAndUpdate(
-  { _id: borrow.user, "borrowedBooks.bookId": borrow.book },
-  { $set: { "borrowedBooks.$.returned": true } }
-);
-
-await Notification.create({
-  message: `A book has been returned`,
-  type: "book_returned",
-  forRole: "admin",
-});
+  await User.findOneAndUpdate(
+    { _id: borrow.user, "borrowedBooks.bookId": borrow.book },
+    { $set: { "borrowedBooks.$.returned": true } }
+  );
 
   const book = await Book.findById(borrow.book);
   if (book) {
     book.quantity += 1;
     await book.save();
+
+    await Notification.create({
+      message: `"${book.title}" has been returned`,
+      type: "book_returned",
+      forRole: "admin",
+    });
   }
 
   res.status(200).json({
@@ -153,7 +151,7 @@ export const getOverdueBooks = catchAsyncErrors(async (req, res, next) => {
     dueDate: { $lt: new Date() },
   })
     .populate("user", "name email")
-    .populate("book", "title");
+    .populate("book", "title author coverImage");
 
   res.status(200).json({
     success: true,
@@ -178,10 +176,15 @@ export const getBorrowStats = catchAsyncErrors(async (req, res, next) => {
   });
 });
 
+/*
+================================
+ALL BORROWS (ADMIN)
+================================
+*/
 export const getAllBorrows = catchAsyncErrors(async (req, res, next) => {
   const borrows = await Borrow.find()
     .populate("user", "name email")
-    .populate("book", "title author")
+    .populate("book", "title author coverImage") // ✅ added coverImage
     .sort({ createdAt: -1 });
 
   res.status(200).json({
@@ -190,4 +193,3 @@ export const getAllBorrows = catchAsyncErrors(async (req, res, next) => {
     allBorrows: borrows,
   });
 });
-

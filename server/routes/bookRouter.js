@@ -18,7 +18,7 @@ router.post(
   addBook
 );
 
-router.get("/", isAuthenticated, getAllBooks);
+router.get("/", getAllBooks);
 router.delete("/:id", isAuthenticated, isAuthorized("admin"), deleteBook);
 
 

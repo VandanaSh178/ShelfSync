@@ -20,10 +20,7 @@ export const app = express();
 
 // CORS - Multi-origin (supports Netlify, Vercel, and localhost)
 const allowedOrigins = [
-  "https://shelfsyncc.netlify.app",
-  "https://shelf-sync-beta.vercel.app",
-  "http://localhost:5173",
-  "http://localhost:3000",
+  process.env.FRONTEND_URL || "http://localhost:5173",
 ];
 
 app.use(
@@ -68,6 +65,12 @@ app.use("/api/notifications", notificationRouter);
 
 notifyUsers();
 removeUnverifiedAccounts();
+
+// Add BEFORE errorMiddleware
+app.use((req, res) => {
+  console.log("❌ Unmatched route:", req.method, req.url);
+  res.status(404).json({ message: `Route ${req.method} ${req.url} not found` });
+});
 
 // Error middleware (ALWAYS LAST)
 app.use(errorMiddleware);
