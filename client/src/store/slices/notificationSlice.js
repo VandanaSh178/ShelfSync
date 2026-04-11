@@ -1,7 +1,7 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-const API = "http://localhost:4000/api/notifications";
+const API = "https://shelfsync-api.onrender.com/api/notifications";
 
 // Thunks
 export const fetchNotifications = createAsyncThunk(

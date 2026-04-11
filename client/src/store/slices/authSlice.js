@@ -180,7 +180,7 @@ export const {
 // 🚀 ASYNC THUNKS
 ////////////////////////////////////////////////////////
 
-const BASE_URL = "http://localhost:4000/api/auth";
+const BASE_URL = "https://shelfsync-api.onrender.com/api/auth";
 
 // 1. REGISTER
 // Inside authSlice.js
@@ -189,7 +189,7 @@ export const register = (userData) => async (dispatch) => {
     dispatch(registerRequest());
     
     // Ensure userData is a clean object { name, email, password }
-    const { data } = await axios.post("http://localhost:4000/api/auth/register", userData, {
+    const { data } = await axios.post("https://shelfsync-api.onrender.com/api/auth/register", userData, {
       withCredentials: true,
       headers: { "Content-Type": "application/json" },
     });
@@ -245,7 +245,7 @@ export const logoutUser = () => async (dispatch) => {
     dispatch(logoutRequest());
 
     // ✅ FIX: Use axios.get to match your backend router.get
-    // Ensure BASE_URL is "http://localhost:4000/api/auth"
+    // Ensure BASE_URL is "https://shelfsync-api.onrender.com/api/auth"
     const { data } = await axios.get(`${BASE_URL}/logout`, { 
       withCredentials: true 
     });
@@ -268,7 +268,7 @@ export const logoutUser = () => async (dispatch) => {
 export const getUser = () => async (dispatch) => {
   try {
     dispatch(getUserRequest());
-    const { data } = await axios.get("http://localhost:4000/api/auth/me", {
+    const { data } = await axios.get("https://shelfsync-api.onrender.com/api/auth/me", {
       withCredentials: true,
     });
     dispatch(getUserSuccess(data.user));

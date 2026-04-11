@@ -5,7 +5,7 @@ import { logout } from "../store/slices/authSlice";
 
 const API = axios.create({
   // Dynamic baseURL based on environment
-  baseURL: import.meta.env.VITE_API_URL || "http://localhost:4000",
+  baseURL: import.meta.env.VITE_API_URL || "https://shelfsync-api.onrender.com",
   withCredentials: true, // Crucial for Cookie-based Auth
   headers: {
     "Content-Type": "application/json",
