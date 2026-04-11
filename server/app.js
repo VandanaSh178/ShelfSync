@@ -20,7 +20,9 @@ export const app = express();
 
 // CORS - Multi-origin (supports Netlify, Vercel, and localhost)
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "http://localhost:5173",
+  "https://shelf-sync-1.vercel.app",
+  "http://localhost:5173",
+  process.env.FRONTEND_URL,
 ];
 
 app.use(
