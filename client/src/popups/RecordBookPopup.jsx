@@ -1,19 +1,18 @@
-import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
+import React from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { toggleRecordBookPopup } from '../store/slices/popUpSlice';
 import { recordBookBorrow } from '../store/slices/borrowSlice';
 
 const RecordBookPopup = ({ bookId }) => {
   const dispatch = useDispatch();
-  const [email, setEmail] = useState("");
+  const { user } = useSelector((state) => state.auth);
 
   const handleRecordBook = (e) => {
-  e.preventDefault();
-  console.log("bookId being sent:", bookId); // ← check this in browser console
-  if (!bookId) return;
-  dispatch(recordBookBorrow(bookId));
-  dispatch(toggleRecordBookPopup());
-};
+    e.preventDefault();
+    if (!bookId) return;
+    dispatch(recordBookBorrow(bookId));
+    dispatch(toggleRecordBookPopup());
+  };
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm p-5 flex items-center justify-center z-50">
@@ -31,18 +30,34 @@ const RecordBookPopup = ({ bookId }) => {
         </div>
 
         {/* Form */}
-        <div className="p-6 space-y-4">
+        <form onSubmit={handleRecordBook} className="p-6 space-y-4">
+
+          {/* Auto-filled user info */}
           <div>
             <label className="block text-gray-500 text-xs font-bold uppercase tracking-widest mb-1">
-              User Email
+              Borrowing As
             </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter user email"
-              className="w-full border border-gray-200 rounded-lg px-4 py-2 text-gray-900 outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-400 transition-all"
-            />
+            <div className="flex items-center gap-3 border border-gray-200 rounded-lg px-4 py-3 bg-gray-50">
+              <div className="w-8 h-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0">
+                <span className="text-white text-xs font-black">
+                  {user?.name?.charAt(0).toUpperCase() || "?"}
+                </span>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">{user?.name || "Unknown"}</p>
+                <p className="text-xs text-gray-400">{user?.email || "No email"}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Borrow info */}
+          <div className="bg-orange-50 border border-orange-100 rounded-lg px-4 py-3">
+            <p className="text-xs text-orange-700 font-semibold">
+              📅 Due date will be set to <span className="font-black">7 days</span> from today.
+            </p>
+            <p className="text-xs text-orange-500 mt-1">
+              Late returns may incur a fine.
+            </p>
           </div>
 
           <div className="flex gap-3 pt-2">
@@ -55,13 +70,12 @@ const RecordBookPopup = ({ bookId }) => {
             </button>
             <button
               type="submit"
-              onClick={handleRecordBook}
               className="flex-1 py-2 rounded-lg bg-orange-500 text-white font-semibold hover:bg-orange-600 transition-all active:scale-95"
             >
               Confirm Borrow
             </button>
           </div>
-        </div>
+        </form>
 
       </div>
     </div>

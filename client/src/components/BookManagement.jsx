@@ -15,7 +15,7 @@ const BookManagement = () => {
 
   const { loading, error, message, books = [] } = useSelector((state) => state.books || {});
   const { isAuthenticated, user } = useSelector((state) => state.auth || {});
-  const { recordBookPopup, readBookPopup, addBookPopup } = useSelector((state) => state.popups || {});
+  const { recordBookPopup, readBookPopup, addBookPopup } = useSelector((state) => state.popup || {});
   const { error: borrowError, message: borrowMessage } = useSelector((state) => state.borrow || {});
 
   const [readBook, setReadBook] = useState({});

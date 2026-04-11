@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate } from "react-router-dom";
-import { toast } from "react-hot-toast";
+import toast from "react-hot-toast";
 import { Mail, Lock, Loader2 } from "lucide-react"; // Install lucide-react for icons
 
 import logo_with_title from "../assets/logo-with-title.png";

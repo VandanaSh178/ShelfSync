@@ -83,12 +83,12 @@ const authSlice = createSlice({
       state.isAuthenticated = true;
     },
     getUserFailure: (state, action) => {
-  state.loading = false;
-  state.isAuthenticated = false;
-  state.user = null;
-  // Do NOT set state.error = action.payload here 
-  // if you don't want a toast to pop up every time a guest visits the site.
-},
+      state.loading = false;
+      state.isAuthenticated = false;
+      state.user = null;
+      // Do NOT set state.error = action.payload here 
+      // if you don't want a toast to pop up every time a guest visits the site.
+    },
     forgotPasswordRequest: (state) => {
       state.loading = true;
       state.error = null;
@@ -133,10 +133,16 @@ const authSlice = createSlice({
       state.loading = false;
       state.error = null;
       state.message = null;
+      state.isAuthenticated=false;
+      state.user=null;
     },
     clearAllErrors: (state) => {
       state.error = null;
-    }
+    },
+    // In authSlice reducers
+clearMessage: (state) => {
+  state.message = null;
+},
   },
 });
 
@@ -166,7 +172,8 @@ export const {
   updatePasswordSuccess,
   updatePasswordFailure,
   resetAuthSlice,
-  clearAllErrors
+  clearAllErrors,
+  clearMessage
 } = authSlice.actions;
 
 ////////////////////////////////////////////////////////
@@ -262,19 +269,12 @@ export const getUser = () => async (dispatch) => {
   try {
     dispatch(getUserRequest());
     const { data } = await axios.get("http://localhost:4000/api/auth/me", {
-      withCredentials: true, 
+      withCredentials: true,
     });
     dispatch(getUserSuccess(data.user));
   } catch (error) {
-    // ✅ THE SILENT FIX
-    // If the status is 401, the user is simply not logged in.
-    // We do NOT dispatch a failure, so no error toast appears.
-    if (error.response?.status === 401) {
-      dispatch(resetAuthSlice()); 
-    } else {
-      // Only show an actual error if the server is down or something is broken
-      dispatch(getUserFailure(error.response?.data?.message || "Session expired"));
-    }
+    // ✅ ANY failure = not logged in, never block the app
+    dispatch(getUserFailure());
   }
 };
 
