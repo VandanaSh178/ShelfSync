@@ -43,7 +43,7 @@ app.use(
   })
 );
 
-app.options("*",cors());
+app.options("/(.*)",cors());
 
 // Middlewares
 app.use(cookieParser());
