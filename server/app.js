@@ -40,10 +40,12 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
+    preflightContinue: false,      // ← cors handles OPTIONS itself
+    optionsSuccessStatus: 204,
   })
 );
 
-app.options("/(.*)",cors());
+// app.options("/(.*)",cors());
 
 // Middlewares
 app.use(cookieParser());
