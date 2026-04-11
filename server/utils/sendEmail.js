@@ -14,7 +14,8 @@ export const sendEmail = async (email, subject, message) => {
     service: process.env.SMTP_SERVICE, 
     // Email service provider (example: gmail)
 
-    port: process.env.SMTP_PORT, 
+    port: Number(process.env.SMTP_PORT) || 465,
+    secure: true,
     // SMTP port (usually 465 or 587)
 
     auth: {
