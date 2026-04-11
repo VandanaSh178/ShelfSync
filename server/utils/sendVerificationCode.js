@@ -21,10 +21,10 @@ export async function sendVerificationCode(verificationCode, email, res) {
     });
 
   } catch (error) {
-
+    console.error("❌ Email send error:", error.message);
     return res.status(500).json({
       success: false,
-      message: "Failed to send verification code"
+      message: error.message
     });
 
   }
