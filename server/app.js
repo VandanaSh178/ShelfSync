@@ -22,26 +22,35 @@ export const app = express();
 const allowedOrigins = [
   "https://shelf-sync-1.vercel.app",
   "http://localhost:5173",
-  process.env.FRONTEND_URL,
-];
+].filter(Boolean);
+
+// Also add FRONTEND_URL dynamically if set
+if (process.env.FRONTEND_URL) {
+  allowedOrigins.push(process.env.FRONTEND_URL);
+}
 
 app.use(
   cors({
     origin: function (origin, callback) {
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
+      console.error(`CORS blocked: ${origin}`);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
   })
 );
+
+app.options("*",cors());
 
 // Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
 
 // File Upload
 app.use(
