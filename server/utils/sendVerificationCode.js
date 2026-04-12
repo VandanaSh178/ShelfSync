@@ -2,30 +2,18 @@ import { generateVerificationOtpEmailTemplate } from "./emailTemplates.js";
 import { sendEmail } from "./sendEmail.js";
 
 export async function sendVerificationCode(verificationCode, email, res) {
-  try {
+  // Generate OTP email template
+  const message = generateVerificationOtpEmailTemplate(verificationCode);
 
-    // OTP email template generate
-    const message = generateVerificationOtpEmailTemplate(verificationCode);
+  // Send email — let errors propagate to authController's try/catch
+  await sendEmail(
+    email,
+    "Your OTP for ShelfSync Account Verification",
+    message
+  );
 
-    // Email send
-    await sendEmail(
-      email,
-      "Your OTP for ShelfSync Account Verification",
-      message
-    );
-
-    // ✅ IMPORTANT: Postman ko response bhejna
-    return res.status(200).json({
-      success: true,
-      message: "Verification OTP sent to your email"
-    });
-
-  } catch (error) {
-    console.error("❌ Email send error:", error.message);
-    return res.status(500).json({
-      success: false,
-      message: error.message
-    });
-
-  }
+  return res.status(200).json({
+    success: true,
+    message: "Verification OTP sent to your email",
+  });
 }
