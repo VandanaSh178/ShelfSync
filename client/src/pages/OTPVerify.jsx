@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import toast from "react-hot-toast";
+import { BookOpen, KeyRound, Loader2 } from "lucide-react";
 import { otpVerification, resetAuthSlice } from "../store/slices/authSlice";
-import logo_with_title from "../assets/logo-with-title.png";
 
 const OTPVerify = () => {
   const { email } = useParams();
   const [otp, setOtp] = useState("");
-  const hasNavigated = useRef(false); // ✅ prevent double navigation
+  const hasNavigated = useRef(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -21,15 +21,12 @@ const OTPVerify = () => {
   };
 
   useEffect(() => {
-    // ✅ Navigate AFTER OTP success based on role
+    // ✅ Navigate to correct dashboard after OTP success
     if (isAuthenticated && user && !hasNavigated.current) {
       hasNavigated.current = true;
       toast.success(message || "Verified successfully!");
-      if (user.role === "admin") {
-        navigate("/admin/dashboard");
-      } else {
-        navigate("/");
-      }
+      // ✅ Fixed: was navigating to "/" (landing), now goes to actual dashboard
+      navigate(user.role === "admin" ? "/admin/dashboard" : "/dashboard");
       dispatch(resetAuthSlice());
     }
   }, [isAuthenticated, user]);
@@ -41,77 +38,150 @@ const OTPVerify = () => {
     }
   }, [error]);
 
-  // ✅ If no email param, redirect back to register
   if (!email) {
     return <Link to="/register" />;
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#FDFDFD]">
-      {/* LEFT PANEL: FORM */}
-      <div className="w-full md:w-1/2 flex items-center justify-center bg-white p-8 relative">
-        <Link
-          to="/register"
-          className="border-2 border-black rounded-3xl font-bold w-32 py-2 px-4 absolute top-10 left-10 hover:bg-black hover:text-white transition duration-300 text-center text-xs uppercase tracking-widest"
-        >
-          Back
-        </Link>
+    <div className="flex min-h-screen" style={{ fontFamily: "'Georgia', serif" }}>
 
-        <div className="max-w-sm w-full">
-          <div className="flex justify-center mb-12">
-            <img src={logo_with_title} alt="Logo" className="h-20 w-auto lg:hidden" />
+      {/* ── LEFT PANEL ── */}
+      <div className="hidden lg:flex lg:w-[52%] relative flex-col overflow-hidden">
+        <div
+          className="absolute inset-0 bg-cover bg-center"
+          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1507842217343-583bb7270b66?w=1200&q=80')` }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d0d0d]/92 via-[#1a0800]/82 to-[#0d0d0d]/75" />
+        <div className="absolute bottom-[-80px] left-[-80px] w-[500px] h-[500px] rounded-full bg-orange-600 opacity-[0.13] blur-[120px] pointer-events-none" />
+        <div className="absolute top-[-40px] right-[-40px] w-[300px] h-[300px] rounded-full bg-amber-500 opacity-[0.07] blur-[100px] pointer-events-none" />
+        <div
+          className="absolute inset-0 opacity-[0.035]"
+          style={{ backgroundImage: `linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px)`, backgroundSize: "60px 60px" }}
+        />
+
+        <div className="relative flex flex-col h-full p-12">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-orange-500 rounded-xl flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white text-[18px] tracking-tight font-semibold">ShelfSync</span>
           </div>
 
-          <h1 className="text-4xl font-serif text-center mb-6">Verify Identity</h1>
-          <p className="text-gray-500 text-center mb-8 text-sm">
-            We sent a code to <span className="font-bold text-black">{email}</span>.
-          </p>
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-8 h-px bg-orange-500" />
+              <span className="text-[10px] uppercase tracking-[0.3em] text-orange-400 font-bold">Identity Verification</span>
+            </div>
+            <h2 className="text-[46px] text-white leading-[1.1] mb-6 font-normal">
+              One step<br />
+              away from<br />
+              your <span className="text-orange-400 italic">library.</span>
+            </h2>
+            <p className="text-gray-400 text-[14px] leading-relaxed max-w-xs">
+              We sent a verification code to your email. Enter it to confirm your identity and access your account.
+            </p>
+          </div>
 
-          <form onSubmit={handleOtpVerification} className="space-y-6">
-            <div>
-              <input
-                type="text"
-                maxLength="5"
-                value={otp}
-                onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))} // ✅ numbers only
-                placeholder="00000"
-                className="w-full border border-gray-200 rounded-2xl py-5 px-4 text-center text-3xl tracking-[0.5em] font-serif focus:outline-none focus:ring-4 focus:ring-orange-500/5 focus:border-orange-500 transition-all shadow-sm"
-                required
-              />
+          <div className="border-l-2 border-orange-500/40 pl-4">
+            <p className="text-gray-400 text-[13px] italic leading-relaxed">
+              "The automation alone saved us hours every week."
+            </p>
+            <p className="text-[11px] text-gray-600 mt-1 uppercase tracking-wider">— School Librarian, Imphal</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ── RIGHT PANEL ── */}
+      <div className="flex-1 bg-[#fafaf8] flex flex-col">
+
+        {/* Mobile header */}
+        <div className="lg:hidden flex items-center gap-2 p-6 border-b border-gray-100">
+          <div className="w-7 h-7 bg-orange-500 rounded-lg flex items-center justify-center">
+            <BookOpen className="w-3.5 h-3.5 text-white" />
+          </div>
+          <span className="text-gray-900 text-[16px] font-semibold">ShelfSync</span>
+        </div>
+
+        <div className="flex-1 flex flex-col justify-center px-8 sm:px-14 lg:px-16 xl:px-20 py-12">
+          <div className="max-w-sm w-full mx-auto lg:mx-0">
+
+            {/* Back button */}
+            <Link
+              to="/register"
+              className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.2em] text-gray-400 hover:text-gray-700 font-bold mb-10 transition-colors"
+            >
+              ← Back to register
+            </Link>
+
+            {/* Header */}
+            <div className="mb-10">
+              <div className="inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.25em] text-orange-600 bg-orange-50 border border-orange-200 px-3 py-1.5 rounded-full font-bold mb-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-pulse" />
+                Verification required
+              </div>
+              <h1 className="text-[36px] text-gray-900 leading-tight mb-2 font-normal">
+                Verify your<br />identity
+              </h1>
+              <p className="text-gray-400 text-[13px]">
+                We sent a code to{" "}
+                <span className="text-gray-700 font-semibold">{email}</span>
+              </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={loading || otp.length < 5} // ✅ disable until 6 digits entered
-              className="w-full bg-black text-white font-bold py-5 rounded-2xl hover:bg-gray-900 transition duration-300 uppercase tracking-[0.2em] text-[10px] shadow-xl shadow-black/10 disabled:bg-gray-400 disabled:cursor-not-allowed"
-            >
-              {loading ? "Verifying..." : "Confirm Code"}
-            </button>
-          </form>
+            {/* Form */}
+            <form onSubmit={handleOtpVerification} className="space-y-5">
+              <div>
+                <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-3">
+                  Enter 5-digit code
+                </label>
+                <div className="relative">
+                  <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    maxLength="5"
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
+                    placeholder="00000"
+                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-4 text-[24px] text-center tracking-[0.5em] font-serif text-gray-900 placeholder-gray-200 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                    required
+                  />
+                </div>
+              </div>
 
-          <p className="text-center text-xs text-gray-400 mt-6">
-            Didn't receive a code?{" "}
-            <Link to="/register" className="text-orange-500 font-bold hover:underline">
-              Re-register
-            </Link>
+              <button
+                type="submit"
+                disabled={loading || otp.length < 5}
+                className="w-full bg-gray-900 hover:bg-black disabled:bg-gray-300 disabled:cursor-not-allowed text-white text-[11px] uppercase tracking-[0.2em] font-bold py-4 rounded-2xl transition-all flex items-center justify-center gap-2 shadow-lg shadow-black/10"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Verifying…
+                  </>
+                ) : (
+                  "Confirm code"
+                )}
+              </button>
+            </form>
+
+            <p className="text-center text-[13px] text-gray-400 mt-7">
+              Didn't receive a code?{" "}
+              <Link to="/register" className="text-orange-500 hover:text-orange-600 font-semibold transition-colors">
+                Re-register
+              </Link>
+            </p>
+
+          </div>
+        </div>
+
+        <div className="px-8 sm:px-14 lg:px-16 xl:px-20 py-5 border-t border-gray-100">
+          <p className="text-[10px] text-gray-300 uppercase tracking-widest text-center lg:text-left">
+            © 2026 ShelfSync Systems. All Rights Reserved.
           </p>
         </div>
       </div>
 
-      {/* RIGHT PANEL: BRANDING */}
-      <div className="hidden w-1/2 bg-black text-white md:flex flex-col items-center justify-center p-12 rounded-tl-[80px] rounded-bl-[80px] relative overflow-hidden">
-        <div className="absolute bottom-[-10%] right-[-10%] w-64 h-64 bg-orange-500 rounded-full blur-[120px] opacity-20"></div>
-        <div className="text-center relative z-10">
-          <img src={logo_with_title} alt="Logo" className="mb-12 h-44 w-auto brightness-0 invert mx-auto" />
-          <p className="text-gray-400 mb-8 uppercase tracking-widest text-[10px] font-bold">New to our platform?</p>
-          <Link
-            to="/register"
-            className="inline-block border-2 border-white/20 text-white hover:bg-white hover:text-black py-3 px-8 rounded-full font-bold uppercase tracking-widest text-[10px] transition duration-300"
-          >
-            Create Account
-          </Link>
-        </div>
-      </div>
     </div>
   );
 };

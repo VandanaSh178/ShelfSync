@@ -3,6 +3,7 @@ import axios from "axios";
 
 const initialState = {
   loading: false,
+  initializing: true, // FIX: guards routes until getUser() resolves
   user: null,
   allUsers: [],
   error: null,
@@ -14,7 +15,6 @@ const authSlice = createSlice({
   name: "auth",
   initialState,
   reducers: {
-    // REQUESTS
     registerRequest: (state) => {
       state.loading = true;
       state.error = null;
@@ -79,15 +79,17 @@ const authSlice = createSlice({
     },
     getUserSuccess: (state, action) => {
       state.loading = false;
+      state.initializing = false; // FIX: unblock route guards
       state.user = action.payload;
       state.isAuthenticated = true;
     },
-    getUserFailure: (state, action) => {
+    getUserFailure: (state) => {
       state.loading = false;
+      state.initializing = false; // FIX: unblock route guards even on failure
       state.isAuthenticated = false;
       state.user = null;
-      // Do NOT set state.error = action.payload here 
-      // if you don't want a toast to pop up every time a guest visits the site.
+      // Intentionally NOT setting state.error here to avoid
+      // spurious toast popups when a guest visits the site.
     },
     forgotPasswordRequest: (state) => {
       state.loading = true;
@@ -129,20 +131,30 @@ const authSlice = createSlice({
       state.error = action.payload;
     },
 
+    // FIX: Only clears transient status flags — never touches isAuthenticated or user.
+    // Previously this wiped auth state, silently logging users out on any error.
     resetAuthSlice: (state) => {
       state.loading = false;
       state.error = null;
       state.message = null;
-      state.isAuthenticated=false;
-      state.user=null;
     },
+
+    // Use this only for actual sign-out (e.g. after logoutSuccess)
+    clearAuth: (state) => {
+      state.loading = false;
+      state.error = null;
+      state.message = null;
+      state.isAuthenticated = false;
+      state.user = null;
+    },
+
     clearAllErrors: (state) => {
       state.error = null;
     },
-    // In authSlice reducers
-clearMessage: (state) => {
-  state.message = null;
-},
+
+    clearMessage: (state) => {
+      state.message = null;
+    },
   },
 });
 
@@ -172,52 +184,51 @@ export const {
   updatePasswordSuccess,
   updatePasswordFailure,
   resetAuthSlice,
+  clearAuth,
   clearAllErrors,
-  clearMessage
+  clearMessage,
 } = authSlice.actions;
 
 ////////////////////////////////////////////////////////
-// 🚀 ASYNC THUNKS
+// ASYNC THUNKS
 ////////////////////////////////////////////////////////
 
 const BASE_URL = "https://shelfsync-api.onrender.com/api/auth";
 
 // 1. REGISTER
-// Inside authSlice.js
 export const register = (userData) => async (dispatch) => {
   try {
     dispatch(registerRequest());
-    
-    // Ensure userData is a clean object { name, email, password }
-    const { data } = await axios.post("https://shelfsync-api.onrender.com/api/auth/register", userData, {
-      withCredentials: true,
-      headers: { "Content-Type": "application/json" },
-    });
-
+    const { data } = await axios.post(
+      `${BASE_URL}/register`,
+      userData,
+      { withCredentials: true, headers: { "Content-Type": "application/json" } }
+    );
     dispatch(registerSuccess({ message: data.message }));
   } catch (error) {
-    // This captures specific backend messages like "Too many attempts"
-    const errorMessage = error.response?.data?.message || "Registration failed";
+    const errorMessage =
+      error.response?.data?.message || "Registration failed";
     dispatch(registerFailure(errorMessage));
   }
 };
 
 // 2. OTP VERIFICATION
-// 2. OTP VERIFICATION
 export const otpVerification = (otpData) => async (dispatch) => {
   try {
     dispatch(otpVerificationRequest());
-    
-    // ✅ FIX: Spread otpData or send it directly so the keys 
-    // email and otp are at the top level of req.body
     const { data } = await axios.post(`${BASE_URL}/verify-otp`, otpData, {
       withCredentials: true,
       headers: { "Content-Type": "application/json" },
     });
-    
-    dispatch(otpVerificationSuccess({ user: data.user, message: data.message }));
+    dispatch(
+      otpVerificationSuccess({ user: data.user, message: data.message })
+    );
   } catch (error) {
-    dispatch(otpVerificationFailure(error.response?.data?.message || "OTP verification failed"));
+    dispatch(
+      otpVerificationFailure(
+        error.response?.data?.message || "OTP verification failed"
+      )
+    );
   }
 };
 
@@ -230,36 +241,26 @@ export const loginUser = (credentials) => async (dispatch) => {
       headers: { "Content-Type": "application/json" },
     });
     dispatch(loginSuccess({ user: data.user, message: data.message }));
+    return data;
   } catch (error) {
-    dispatch(loginFailure(error.response?.data?.message || "Login failed"));
+    dispatch(
+      loginFailure(error.response?.data?.message || "Login failed")
+    );
   }
 };
 
 // 4. LOGOUT
-// Inside authSlice.js
-
-// Inside authSlice.js
-
 export const logoutUser = () => async (dispatch) => {
   try {
     dispatch(logoutRequest());
-
-    // ✅ FIX: Use axios.get to match your backend router.get
-    // Ensure BASE_URL is "https://shelfsync-api.onrender.com/api/auth"
-    const { data } = await axios.get(`${BASE_URL}/logout`, { 
-      withCredentials: true 
-    });
-
+    await axios.get(`${BASE_URL}/logout`, { withCredentials: true });
+    // FIX: removed redundant dispatch(resetAuthSlice()) — logoutSuccess
+    // already sets user=null and isAuthenticated=false
     dispatch(logoutSuccess());
-    dispatch(resetAuthSlice());
-
-    // ✅ REDIRECT: Force the browser to the login page after state is cleared
     window.location.href = "/login";
-
   } catch (error) {
-    // If it's still 404, check if your backend route is actually "/logout" 
-    // or if it's something else like "/user/logout"
-    const errorMessage = error.response?.data?.message || "Logout failed";
+    const errorMessage =
+      error.response?.data?.message || "Logout failed";
     dispatch(logoutFailure(errorMessage));
   }
 };
@@ -268,12 +269,12 @@ export const logoutUser = () => async (dispatch) => {
 export const getUser = () => async (dispatch) => {
   try {
     dispatch(getUserRequest());
-    const { data } = await axios.get("https://shelfsync-api.onrender.com/api/auth/me", {
+    const { data } = await axios.get(`${BASE_URL}/me`, {
       withCredentials: true,
     });
     dispatch(getUserSuccess(data.user));
   } catch (error) {
-    // ✅ ANY failure = not logged in, never block the app
+    // Any failure = not logged in; never block the app
     dispatch(getUserFailure());
   }
 };
@@ -282,13 +283,18 @@ export const getUser = () => async (dispatch) => {
 export const forgotPassword = (email) => async (dispatch) => {
   try {
     dispatch(forgotPasswordRequest());
-    const { data } = await axios.post(`${BASE_URL}/password/forgot`, { email }, {
-      withCredentials: true,
-      headers: { "Content-Type": "application/json" },
-    });
+    const { data } = await axios.post(
+      `${BASE_URL}/password/forgot`,
+      { email },
+      { withCredentials: true, headers: { "Content-Type": "application/json" } }
+    );
     dispatch(forgotPasswordSuccess({ message: data.message }));
   } catch (error) {
-    dispatch(forgotPasswordFailure(error.response?.data?.message || "Password reset request failed"));
+    dispatch(
+      forgotPasswordFailure(
+        error.response?.data?.message || "Password reset request failed"
+      )
+    );
   }
 };
 
@@ -296,13 +302,18 @@ export const forgotPassword = (email) => async (dispatch) => {
 export const resetPassword = (token, passwords) => async (dispatch) => {
   try {
     dispatch(resetPasswordRequest());
-    const { data } = await axios.put(`${BASE_URL}/password/reset/${token}`, passwords, {
-      withCredentials: true,
-      headers: { "Content-Type": "application/json" },
-    });
+    const { data } = await axios.put(
+      `${BASE_URL}/password/reset/${token}`,
+      passwords,
+      { withCredentials: true, headers: { "Content-Type": "application/json" } }
+    );
     dispatch(resetPasswordSuccess({ message: data.message }));
   } catch (error) {
-    dispatch(resetPasswordFailure(error.response?.data?.message || "Password reset failed"));
+    dispatch(
+      resetPasswordFailure(
+        error.response?.data?.message || "Password reset failed"
+      )
+    );
   }
 };
 
@@ -310,13 +321,18 @@ export const resetPassword = (token, passwords) => async (dispatch) => {
 export const updatePassword = (passwords) => async (dispatch) => {
   try {
     dispatch(updatePasswordRequest());
-    const { data } = await axios.put(`${BASE_URL}/password/update`, passwords, {
-      withCredentials: true,
-      headers: { "Content-Type": "application/json" },
-    });
+    const { data } = await axios.put(
+      `${BASE_URL}/password/update`,
+      passwords,
+      { withCredentials: true, headers: { "Content-Type": "application/json" } }
+    );
     dispatch(updatePasswordSuccess({ message: data.message }));
   } catch (error) {
-    dispatch(updatePasswordFailure(error.response?.data?.message || "Password update failed"));
+    dispatch(
+      updatePasswordFailure(
+        error.response?.data?.message || "Password update failed"
+      )
+    );
   }
 };
 

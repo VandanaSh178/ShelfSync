@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { useDispatch, useSelector } from 'react-redux';
 import { getUser } from './store/slices/authSlice';
@@ -11,39 +11,30 @@ import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OTPVerification from "./pages/OTPVerify";
-import AdminDashboard from "./components/AdminDashBoard";
 import LandingPage from './pages/LandingPage';
 
-const PUBLIC_PATHS = [
-  '/',
-  '/register',
-  '/login',
-  '/password/forgot',
-  '/otp-verification',
-  '/password/reset',
-];
+// FIX: All guards read `initializing` and return null (blank) while getUser()
+// is still in flight. Without this, a logged-in user hitting refresh briefly
+// sees the login page before being redirected — causing a visible flash.
 
-// ✅ Blocks unauthenticated users
 const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useSelector((state) => state.auth);
-  if (loading) return null;
+  const { isAuthenticated, initializing } = useSelector((state) => state.auth);
+  if (initializing) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return children;
 };
 
-// ✅ Blocks non-admins
 const AdminRoute = ({ children }) => {
-  const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
-  if (loading) return null;
+  const { isAuthenticated, initializing, user } = useSelector((state) => state.auth);
+  if (initializing) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
   return children;
 };
 
-// ✅ Redirects already logged-in users away from login/register
-// NO loading check — don't block or unmount guest pages
 const GuestRoute = ({ children }) => {
-  const { isAuthenticated, user } = useSelector((state) => state.auth);
+  const { isAuthenticated, initializing, user } = useSelector((state) => state.auth);
+  if (initializing) return null;
   if (isAuthenticated) {
     return <Navigate to={user?.role === "admin" ? "/admin/dashboard" : "/dashboard"} replace />;
   }
@@ -52,44 +43,28 @@ const GuestRoute = ({ children }) => {
 
 const AppRoutes = () => {
   const dispatch = useDispatch();
-  const location = useLocation();
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
-    const isPublicPage = PUBLIC_PATHS.some(path =>
-      location.pathname.startsWith(path)
-    );
+    dispatch(getUser());
+  }, []);
 
-    // Only call getUser on protected pages
-    if (!isPublicPage) {
-      dispatch(getUser());
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchBooks());
     }
-
-    // Always fetch books
-    dispatch(fetchBooks());
-  }, [location.pathname]); // ✅ re-runs when route changes
+  }, [isAuthenticated]);
 
   return (
     <Routes>
-      <Route path='/' element={<LandingPage/>}/>
-
-      {/* 🏠 USER */}
+      <Route path="/" element={<LandingPage />} />
       <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
-
-      {/* 🛠️ ADMIN */}
       <Route path="/admin/dashboard" element={<AdminRoute><Home /></AdminRoute>} />
-
-      {/* 🔓 GUEST ONLY */}
       <Route path="/login" element={<GuestRoute><Login /></GuestRoute>} />
       <Route path="/register" element={<GuestRoute><Register /></GuestRoute>} />
-
-      {/* 🔓 FULLY PUBLIC */}
       <Route path="/password/forgot" element={<ForgotPassword />} />
       <Route path="/password/reset/:token" element={<ResetPassword />} />
-
-      {/* ✅ OTP — no GuestRoute, fully public */}
       <Route path="/otp-verification/:email" element={<OTPVerification />} />
-
-      {/* Wildcard */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
