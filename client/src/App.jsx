@@ -12,8 +12,10 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import OTPVerification from "./pages/OTPVerify";
 import AdminDashboard from "./components/AdminDashBoard";
+import LandingPage from './pages/LandingPage';
 
 const PUBLIC_PATHS = [
+  '/',
   '/register',
   '/login',
   '/password/forgot',
@@ -34,7 +36,7 @@ const AdminRoute = ({ children }) => {
   const { isAuthenticated, loading, user } = useSelector((state) => state.auth);
   if (loading) return null;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (user?.role !== "admin") return <Navigate to="/" replace />;
+  if (user?.role !== "admin") return <Navigate to="/dashboard" replace />;
   return children;
 };
 
@@ -43,7 +45,7 @@ const AdminRoute = ({ children }) => {
 const GuestRoute = ({ children }) => {
   const { isAuthenticated, user } = useSelector((state) => state.auth);
   if (isAuthenticated) {
-    return <Navigate to={user?.role === "admin" ? "/admin/dashboard" : "/"} replace />;
+    return <Navigate to={user?.role === "admin" ? "/admin/dashboard" : "/dashboard"} replace />;
   }
   return children;
 };
@@ -68,8 +70,10 @@ const AppRoutes = () => {
 
   return (
     <Routes>
+      <Route path='/' element={<LandingPage/>}/>
+
       {/* 🏠 USER */}
-      <Route path="/" element={<ProtectedRoute><Home /></ProtectedRoute>} />
+      <Route path="/dashboard" element={<ProtectedRoute><Home /></ProtectedRoute>} />
 
       {/* 🛠️ ADMIN */}
       <Route path="/admin/dashboard" element={<AdminRoute><Home /></AdminRoute>} />
@@ -86,7 +90,7 @@ const AppRoutes = () => {
       <Route path="/otp-verification/:email" element={<OTPVerification />} />
 
       {/* Wildcard */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 };
