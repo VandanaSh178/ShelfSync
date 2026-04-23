@@ -17,7 +17,7 @@ const Home = () => {
   const { user } = useSelector((state) => state.auth);
 
   return (
-    <div className="flex h-screen bg-[#faf9f6] overflow-hidden">
+    <div className="flex h-screen bg-[#faf6f0] overflow-hidden">
 
       {/* SIDEBAR */}
       <Sidebar
@@ -28,48 +28,42 @@ const Home = () => {
       />
 
       {/* MAIN - only this scrolls */}
-      <div className="flex-1 flex flex-col h-screen overflow-y-auto ml-0 md:ml-64">
+      <div className="flex-1 flex flex-col h-screen overflow-y-auto md:ml-[232px]">
 
         <Header />
 
         {/* MOBILE HAMBURGER */}
-        {/* FIX: onClick belongs on the outer div, not the icon child */}
-        <div className="md:hidden sticky top-0 z-40 flex justify-end p-4 bg-[#faf9f6]">
+        <div className="md:hidden sticky top-0 z-40 flex justify-end p-3 bg-[#faf6f0] border-b border-[#e8ddd0]">
           <div
-            className="bg-black rounded-xl h-10 w-10 flex justify-center items-center text-white shadow-lg cursor-pointer active:scale-90 transition-transform"
+            className="bg-[#1a1612] rounded-xl h-9 w-9 flex justify-center items-center text-white shadow-lg cursor-pointer active:scale-90 transition-transform"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
           >
-            <GiHamburgerMenu className="text-xl" />
+            <GiHamburgerMenu className="text-base" />
           </div>
         </div>
 
-        <div className="p-4 md:p-8 lg:p-12 max-w-7xl mx-auto w-full">
-
-          {/* CONTENT */}
-          <div className="mt-8">
-            {(() => {
-              switch (selectedComponent) {
-                case "dashboard":
-                  return user?.role === "user" ? <UserDashboard /> : <AdminDashboard />;
-                case "books":
-                  return <BookManagement />;
-                case "catalog":
-                  // FIX: was returning null for non-admins, giving a blank screen
-                  // with no feedback. Catalog itself handles what members can see.
-                  return user?.role === "admin" ? <Catalog /> : <Catalog />;
-                case "users":
-                  return user?.role === "admin" ? <Users /> : null;
-                case "my borrowed books":
-                  return <MyBorrowedBooks />;
-                case "ai":
-                  return <AIRecommendations />;
-                default:
-                  return user?.role === "user" ? <UserDashboard /> : <AdminDashboard />;
-              }
-            })()}
-          </div>
-
+        {/* CONTENT — no extra padding; each component owns its own */}
+        <div className="flex-1 min-h-0">
+          {(() => {
+            switch (selectedComponent) {
+              case "dashboard":
+                return user?.role === "user" ? <UserDashboard /> : <AdminDashboard />;
+              case "books":
+                return <BookManagement />;
+              case "catalog":
+                return <Catalog />;
+              case "users":
+                return user?.role === "admin" ? <Users /> : null;
+              case "my borrowed books":
+                return <MyBorrowedBooks />;
+              case "ai":
+                return <AIRecommendations />;
+              default:
+                return user?.role === "user" ? <UserDashboard /> : <AdminDashboard />;
+            }
+          })()}
         </div>
+
       </div>
     </div>
   );

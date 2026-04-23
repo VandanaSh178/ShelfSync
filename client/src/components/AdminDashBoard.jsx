@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { Pie } from "react-chartjs-2";
 import {
   Chart as ChartJS, CategoryScale, LinearScale, BarElement,
@@ -7,22 +7,27 @@ import {
 import { useSelector, useDispatch } from "react-redux";
 import { fetchAllBorrows } from "../store/slices/borrowSlice";
 import { getUsers } from "../store/slices/userSlice";
-import { Users, BookOpen, ShieldCheck, BookMarked, RotateCcw, TrendingUp, Quote } from "lucide-react";
+import {
+  Users, BookOpen, ShieldCheck, BookMarked,
+  RotateCcw, TrendingUp, Sparkles,
+} from "lucide-react";
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, LineElement, PointElement, ArcElement);
 
-const StatCard = ({ icon: Icon, label, value, accent, bg }) => (
-  <div className="flex items-center gap-4 bg-white rounded-xl p-4 border border-gray-100 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200">
-    <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${bg}`}>
-      <Icon className={`w-4 h-4 ${accent}`} />
-    </div>
-    <div className="flex-1 min-w-0">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">{label}</p>
-      <p className="text-2xl font-black text-gray-900 tabular-nums leading-none">{value}</p>
-    </div>
-    <div className={`w-1 h-8 rounded-full flex-shrink-0 ${accent.replace("text-", "bg-")}`} />
-  </div>
-);
+const C = {
+  bg: "#faf6f0",
+  bgDeep: "#f5ede0",
+  bgCard: "#ffffff",
+  border: "#e8ddd0",
+  orange: "#f97316",
+  orangeDeep: "#ea580c",
+  orangeFaint: "rgba(249,115,22,0.08)",
+  textPrimary: "#2d1f0e",
+  textMuted: "#a89070",
+  textFaint: "#c4a882",
+  dark: "#1a1612",
+  green: "#22c55e",
+};
 
 const AdminDashboard = () => {
   const dispatch = useDispatch();
@@ -30,160 +35,405 @@ const AdminDashboard = () => {
   const { allUsers = [] } = useSelector((state) => state.users);
   const { books = [] } = useSelector((state) => state.books);
   const { allBorrows = [] } = useSelector((state) => state.borrow);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     dispatch(fetchAllBorrows());
     dispatch(getUsers());
+    setTimeout(() => setMounted(true), 60);
   }, [dispatch]);
 
-  const totalUsers = allUsers.filter((u) => u.role === "user").length;
-  const totalAdmin = allUsers.filter((u) => u.role === "admin").length;
-  const totalBooks = books.length;
+  const totalUsers    = allUsers.filter((u) => u.role === "user").length;
+  const totalAdmin    = allUsers.filter((u) => u.role === "admin").length;
+  const totalBooks    = books.length;
   const totalBorrowed = allBorrows.filter((b) => !b.returned).length;
   const totalReturned = allBorrows.filter((b) => b.returned).length;
+  const totalMembers  = totalUsers + totalAdmin;
+  const adminPct      = totalMembers > 0 ? Math.round((totalAdmin / totalMembers) * 100) : 0;
 
   const initials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "A";
+    : "AD";
+
+  const cardStyle = (delay = 0) => ({
+    background: C.bgCard,
+    border: `1.5px solid ${C.border}`,
+    borderRadius: 16,
+    padding: "20px 22px",
+    boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
+    opacity: mounted ? 1 : 0,
+    transform: mounted ? "translateY(0)" : "translateY(16px)",
+    transition: `opacity 0.5s ease ${delay}ms, transform 0.5s ease ${delay}ms`,
+  });
 
   const pieData = {
     labels: ["Regular Users", "Admins"],
     datasets: [{
-      data: [totalUsers, totalAdmin],
-      backgroundColor: ["#111827", "#f97316"],
-      borderWidth: 0,
+      data: totalMembers > 0 ? [totalUsers, totalAdmin] : [1, 0],
+      backgroundColor: [C.dark, C.orange],
+      borderColor: [C.bgCard, C.bgCard],
+      borderWidth: 3,
       hoverOffset: 6,
     }],
   };
 
   const pieOptions = {
-    cutout: 0,
     plugins: {
       legend: { display: false },
-      tooltip: { backgroundColor: "#111827", padding: 10, cornerRadius: 8 },
+      tooltip: {
+        backgroundColor: C.dark,
+        titleColor: "#fff",
+        bodyColor: C.textFaint,
+        padding: 10,
+        cornerRadius: 8,
+        titleFont: { family: "Georgia, serif", size: 12 },
+        bodyFont: { family: "system-ui, sans-serif", size: 11 },
+      },
     },
+    cutout: "62%",
   };
 
   return (
-    <main className="flex-1 px-6 pb-6 pt-4 bg-gray-50 min-h-screen">
-
-      {/* Page Header */}
-      <div className="mb-2">
-        <p className="text-[11px] font-bold uppercase tracking-widest text-orange-500 mb-0.5">Admin Panel</p>
-        <h1 className="text-2xl font-black text-gray-900">Dashboard Overview</h1>
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-
-        {/* LEFT — Stats */}
-        <div className="xl:col-span-2 flex flex-col gap-3">
-
-          <StatCard icon={Users} label="Total Users" value={totalUsers} accent="text-indigo-500" bg="bg-indigo-50" />
-          <StatCard icon={ShieldCheck} label="Total Admins" value={totalAdmin} accent="text-orange-500" bg="bg-orange-50" />
-          <StatCard icon={BookMarked} label="Total Books" value={totalBooks} accent="text-gray-700" bg="bg-gray-100" />
-
-          {/* Borrow Stats */}
-          <div className="grid grid-cols-2 gap-3">
-            <div className="bg-gray-900 rounded-xl p-4 text-white">
-              <div className="flex items-center gap-2 mb-2">
-                <BookOpen className="w-3.5 h-3.5 text-gray-400" />
-                <p className="text-[9px] font-bold uppercase tracking-widest text-gray-400">Borrowed</p>
-              </div>
-              <p className="text-3xl font-black tabular-nums">{totalBorrowed}</p>
-            </div>
-            <div className="bg-orange-50 border border-orange-100 rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-2">
-                <RotateCcw className="w-3.5 h-3.5 text-orange-400" />
-                <p className="text-[9px] font-bold uppercase tracking-widest text-orange-400">Returned</p>
-              </div>
-              <p className="text-3xl font-black tabular-nums text-orange-500">{totalReturned}</p>
-            </div>
-          </div>
-
+    <main
+      style={{
+        minHeight: "100vh",
+        background: C.bg,
+        padding: "28px 28px 40px",
+        fontFamily: "system-ui, sans-serif",
+        boxSizing: "border-box",
+      }}
+    >
+      {/* ── Page header ── */}
+      <div
+        style={{
+          marginBottom: 28,
+          opacity: mounted ? 1 : 0,
+          transform: mounted ? "translateY(0)" : "translateY(-10px)",
+          transition: "opacity 0.4s ease, transform 0.4s ease",
+          display: "flex",
+          alignItems: "flex-end",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+        }}
+      >
+        <div>
+          <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.28em", textTransform: "uppercase", color: C.orange, margin: 0, marginBottom: 6 }}>
+            Admin Panel
+          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: C.textPrimary, fontFamily: "Georgia, serif", margin: 0, letterSpacing: "-0.02em" }}>
+            Dashboard Overview
+          </h1>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: "5px 0 0", letterSpacing: "0.02em" }}>
+            Monitor your library system at a glance
+          </p>
         </div>
 
-        {/* RIGHT — Profile + Chart + Quote */}
-        <div className="xl:col-span-3 flex flex-col gap-3">
-
-          {/* Admin Profile Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 border border-gray-100">
-                {user?.avatar?.url ? (
-                  <img src={user.avatar.url} alt="avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-                    <span className="text-white text-base font-black">{initials}</span>
-                  </div>
-                )}
+        {/* Admin greeting chip */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+            padding: "8px 14px",
+            background: C.bgCard,
+            border: `1.5px solid ${C.border}`,
+            borderRadius: 12,
+            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+          }}
+        >
+          <div
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 8,
+              overflow: "hidden",
+              border: `2px solid rgba(249,115,22,0.25)`,
+              flexShrink: 0,
+            }}
+          >
+            {user?.avatar?.url ? (
+              <img src={user.avatar.url} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+            ) : (
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDeep})`,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <span style={{ color: "#fff", fontSize: 10, fontWeight: 800 }}>{initials}</span>
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-orange-500 mb-0.5">Signed in as Admin</p>
-                <h2 className="text-lg font-black text-gray-900 truncate">{user?.name || "Administrator"}</h2>
-                <p className="text-xs text-gray-400 truncate">{user?.email}</p>
-              </div>
-              <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-xl flex-shrink-0">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600">Online</span>
-              </div>
-            </div>
+            )}
           </div>
-
-          {/* Chart Card */}
-          <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-            <div className="flex justify-between items-center mb-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mb-0.5">Breakdown</p>
-                <h3 className="text-base font-black text-gray-900">User Distribution</h3>
-              </div>
-              <div className="p-2 bg-gray-50 rounded-xl">
-                <TrendingUp className="w-4 h-4 text-gray-400" />
-              </div>
-            </div>
-            <div className="flex items-center gap-6 flex-wrap">
-              <div className="w-36 h-36 flex-shrink-0">
-                {totalUsers + totalAdmin > 0 ? (
-                  <Pie data={pieData} options={pieOptions} />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-300 text-sm">No data</div>
-                )}
-              </div>
-              <div className="flex flex-col gap-2 flex-1">
-                {[
-                  { label: "Regular Users", value: totalUsers, color: "bg-gray-900" },
-                  { label: "Admins", value: totalAdmin, color: "bg-orange-500" },
-                  { label: "Books in Circulation", value: totalBorrowed, color: "bg-indigo-500" },
-                  { label: "Books Returned", value: totalReturned, color: "bg-emerald-500" },
-                ].map(({ label, value, color }) => (
-                  <div key={label} className="flex items-center gap-3">
-                    <span className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />
-                    <span className="text-xs text-gray-500 flex-1">{label}</span>
-                    <span className="text-xs font-black text-gray-900 tabular-nums">{value}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Quote Card */}
-          <div className="bg-gray-900 rounded-xl p-5 relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-24 h-24 bg-orange-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-            <div className="absolute bottom-0 left-0 w-16 h-16 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/2" />
-
-            <Quote className="w-5 h-5 text-orange-500 mb-2" />
-
-            <p className="text-white text-sm font-medium leading-relaxed relative z-10">
-              "Embarking on the journey of reading fosters personal growth, nurturing a path towards excellence and the refinement of character."
+          <div>
+            <p style={{ fontSize: 11, fontWeight: 700, color: C.textPrimary, margin: 0, fontFamily: "Georgia, serif" }}>
+              {user?.name?.split(" ")[0] || "Admin"}
             </p>
+            <p style={{ fontSize: 9, color: C.textMuted, margin: 0 }}>Administrator</p>
+          </div>
+        </div>
+      </div>
 
-            <div className="flex items-center gap-2 mt-3">
-              <div className="w-6 h-0.5 bg-orange-500 rounded-full" />
-              <p className="text-gray-400 text-xs font-semibold">ShelfSync Team</p>
+      {/* ── Stat cards row ── */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+          gap: 16,
+          marginBottom: 20,
+        }}
+      >
+        {/* Total Users */}
+        <div style={cardStyle(80)}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: "#eef2ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Users size={16} color="#6366f1" />
+            </div>
+            <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: C.textFaint }}>Members</span>
+          </div>
+          <p style={{ fontSize: 36, fontWeight: 900, color: C.textPrimary, margin: "14px 0 2px", fontFamily: "Georgia, serif", letterSpacing: "-0.04em", lineHeight: 1 }}>
+            {totalUsers}
+          </p>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: 0, fontWeight: 600 }}>Total Users</p>
+          <div style={{ marginTop: 14, height: 3, background: C.bgDeep, borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.min(totalUsers * 2, 100)}%`, background: "#6366f1", borderRadius: 4, transition: "width 1s ease" }} />
+          </div>
+        </div>
+
+        {/* Total Admins */}
+        <div style={cardStyle(140)}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div
+              style={{
+                width: 40, height: 40, borderRadius: 12,
+                background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDeep})`,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                boxShadow: "0 4px 12px rgba(249,115,22,0.25)",
+              }}
+            >
+              <ShieldCheck size={16} color="#fff" />
+            </div>
+            <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: C.textFaint }}>Staff</span>
+          </div>
+          <p style={{ fontSize: 36, fontWeight: 900, color: C.textPrimary, margin: "14px 0 2px", fontFamily: "Georgia, serif", letterSpacing: "-0.04em", lineHeight: 1 }}>
+            {totalAdmin}
+          </p>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: 0, fontWeight: 600 }}>Total Admins</p>
+          <div style={{ marginTop: 14, height: 3, background: C.bgDeep, borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: `${Math.min(totalAdmin * 10, 100)}%`, background: C.orange, borderRadius: 4, transition: "width 1s ease" }} />
+          </div>
+        </div>
+
+        {/* Total Books */}
+        <div style={cardStyle(200)}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: C.bgDeep, border: `1.5px solid ${C.border}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <BookMarked size={16} color={C.textPrimary} />
+            </div>
+            <span style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: C.textFaint }}>Catalog</span>
+          </div>
+          <p style={{ fontSize: 36, fontWeight: 900, color: C.textPrimary, margin: "14px 0 2px", fontFamily: "Georgia, serif", letterSpacing: "-0.04em", lineHeight: 1 }}>
+            {totalBooks}
+          </p>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: 0, fontWeight: 600 }}>Total Books</p>
+          <div style={{ marginTop: 14, height: 3, background: C.bgDeep, borderRadius: 4, overflow: "hidden" }}>
+            <div style={{ height: "100%", width: totalBooks > 0 ? "100%" : "0%", background: `linear-gradient(90deg, ${C.dark}, ${C.orange})`, borderRadius: 4, transition: "width 1s ease" }} />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Main content row ── */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 300px", gap: 16, alignItems: "start" }}>
+
+        {/* ── Quote card ── */}
+        <div
+          style={{
+            ...cardStyle(260),
+            background: C.dark,
+            position: "relative",
+            overflow: "hidden",
+            minHeight: 180,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ position: "absolute", top: -40, right: -40, width: 140, height: 140, borderRadius: "50%", background: "rgba(249,115,22,0.1)" }} />
+          <div style={{ position: "absolute", bottom: -20, left: -20, width: 80, height: 80, borderRadius: "50%", background: "rgba(249,115,22,0.06)" }} />
+          <div style={{ position: "relative" }}>
+            <span style={{ fontSize: 48, lineHeight: 0.8, color: C.orange, fontFamily: "Georgia, serif", display: "block", marginBottom: 10, opacity: 0.6 }}>"</span>
+            <p style={{ fontSize: 15, fontWeight: 700, color: "#fff", fontFamily: "Georgia, serif", margin: 0, lineHeight: 1.6, letterSpacing: "-0.01em" }}>
+              Embarking on the journey of reading fosters personal growth, nurturing a path towards excellence.
+            </p>
+          </div>
+          <div style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 20 }}>
+            <p style={{ fontSize: 10, color: C.orange, fontWeight: 700, margin: 0, letterSpacing: "0.08em" }}>— ShelfSync Team</p>
+            <div style={{ padding: "4px 10px", background: "rgba(249,115,22,0.15)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 6 }}>
+              <Sparkles size={11} color={C.orange} />
+            </div>
+          </div>
+        </div>
+
+        {/* ── Borrow activity card ── */}
+        <div
+          style={{
+            ...cardStyle(320),
+            background: C.bgDeep,
+            border: `1.5px dashed rgba(249,115,22,0.3)`,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "space-between",
+            minHeight: 180,
+            overflow: "hidden",
+          }}
+        >
+          <div>
+            <div
+              style={{
+                width: 44, height: 44, borderRadius: 12, background: C.dark,
+                display: "flex", alignItems: "center", justifyContent: "center",
+                marginBottom: 14, boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              }}
+            >
+              <BookOpen size={18} color="#fff" />
+            </div>
+            <p style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.25em", textTransform: "uppercase", color: C.orange, margin: "0 0 6px" }}>
+              Circulation
+            </p>
+            <p style={{ fontSize: 16, fontWeight: 800, color: C.textPrimary, margin: 0, fontFamily: "Georgia, serif" }}>Borrow Activity</p>
+            <p style={{ fontSize: 11, color: C.textMuted, margin: "6px 0 0" }}>Track what's checked out vs returned</p>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginTop: 16 }}>
+            <div style={{ background: C.dark, borderRadius: 12, padding: "12px 14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                <BookOpen size={10} color="#888" />
+                <p style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", color: "#888", margin: 0 }}>Out</p>
+              </div>
+              <p style={{ fontSize: 22, fontWeight: 900, color: "#fff", margin: 0, fontFamily: "Georgia, serif" }}>{totalBorrowed}</p>
+            </div>
+            <div style={{ background: "#fff7ed", borderRadius: 12, padding: "12px 14px", border: `1px solid rgba(249,115,22,0.15)` }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 6 }}>
+                <RotateCcw size={10} color={C.orange} />
+                <p style={{ fontSize: 8, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", color: C.orange, margin: 0 }}>Back</p>
+              </div>
+              <p style={{ fontSize: 22, fontWeight: 900, color: C.orange, margin: 0, fontFamily: "Georgia, serif" }}>{totalReturned}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* ── Donut chart ── */}
+        <div
+          style={{
+            ...cardStyle(380),
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gridRow: "span 2",
+          }}
+        >
+          <div style={{ width: "100%", marginBottom: 16 }}>
+            <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.25em", textTransform: "uppercase", color: C.textFaint, margin: 0 }}>Analytics</p>
+            <p style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary, margin: "4px 0 0", fontFamily: "Georgia, serif" }}>User Distribution</p>
+          </div>
+
+          <div style={{ width: 160, height: 160, position: "relative", flexShrink: 0 }}>
+            <Pie data={pieData} options={pieOptions} />
+            {totalMembers > 0 && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                <p style={{ fontSize: 22, fontWeight: 900, color: C.textPrimary, margin: 0, fontFamily: "Georgia, serif", lineHeight: 1 }}>{adminPct}%</p>
+                <p style={{ fontSize: 8, color: C.textMuted, margin: "3px 0 0", letterSpacing: "0.1em" }}>admins</p>
+              </div>
+            )}
+            {totalMembers === 0 && (
+              <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", pointerEvents: "none" }}>
+                <p style={{ fontSize: 9, color: C.textFaint, textAlign: "center" }}>No data yet</p>
+              </div>
+            )}
+          </div>
+
+          <div style={{ width: "100%", marginTop: 18, display: "flex", flexDirection: "column", gap: 8 }}>
+            {[
+              { label: "Regular Users",        count: totalUsers,    color: C.dark },
+              { label: "Admins",               count: totalAdmin,    color: C.orange },
+              { label: "Books in Circulation", count: totalBorrowed, color: "#6366f1" },
+              { label: "Books Returned",       count: totalReturned, color: C.green },
+            ].map(({ label, count, color }) => (
+              <div
+                key={label}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "8px 12px", background: C.bgDeep, borderRadius: 10, border: `1px solid ${C.border}`,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 11, color: C.textMuted, fontWeight: 600 }}>{label}</span>
+                </div>
+                <span style={{ fontSize: 13, fontWeight: 800, color: C.textPrimary, fontFamily: "Georgia, serif" }}>{count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ── Admin profile card ── */}
+        <div style={{ ...cardStyle(440), gridColumn: "span 2" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+            <div>
+              <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.25em", textTransform: "uppercase", color: C.textFaint, margin: 0 }}>Signed In</p>
+              <p style={{ fontSize: 14, fontWeight: 800, color: C.textPrimary, margin: "4px 0 0", fontFamily: "Georgia, serif" }}>Admin Profile</p>
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 6, padding: "5px 11px", background: "#f0fdf4", border: "1.5px solid #bbf7d0", borderRadius: 10 }}>
+              <span style={{ width: 7, height: 7, borderRadius: "50%", background: C.green, display: "inline-block", animation: "pulse 1.4s ease-in-out infinite" }} />
+              <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.15em", textTransform: "uppercase", color: "#15803d" }}>Online</span>
             </div>
           </div>
 
+          <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 16px", background: C.bgDeep, borderRadius: 12, border: `1px solid ${C.border}` }}>
+            <div style={{ width: 52, height: 52, borderRadius: 14, overflow: "hidden", flexShrink: 0, border: `2px solid rgba(249,115,22,0.25)` }}>
+              {user?.avatar?.url ? (
+                <img src={user.avatar.url} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <div style={{ width: "100%", height: "100%", background: `linear-gradient(135deg, ${C.orange}, ${C.orangeDeep})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <span style={{ color: "#fff", fontSize: 18, fontWeight: 900, fontFamily: "Georgia, serif" }}>{initials}</span>
+                </div>
+              )}
+            </div>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: C.orange, margin: "0 0 3px" }}>Administrator</p>
+              <h2 style={{ fontSize: 16, fontWeight: 900, color: C.textPrimary, fontFamily: "Georgia, serif", margin: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {user?.name || "Administrator"}
+              </h2>
+              <p style={{ fontSize: 11, color: C.textMuted, margin: "2px 0 0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user?.email}</p>
+            </div>
+
+            {/* Quick stat chips */}
+            <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+              {[
+                { val: totalUsers,    label: "Users",  color: C.textPrimary },
+                { val: totalBooks,    label: "Books",  color: C.orange },
+                { val: totalBorrowed, label: "Active", color: "#6366f1" },
+              ].map(({ val, label, color }) => (
+                <div key={label} style={{ padding: "8px 14px", background: C.bgCard, border: `1.5px solid ${C.border}`, borderRadius: 10, textAlign: "center" }}>
+                  <p style={{ fontSize: 16, fontWeight: 900, color, fontFamily: "Georgia, serif", margin: 0, lineHeight: 1 }}>{val}</p>
+                  <p style={{ fontSize: 8, color: C.textFaint, fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", margin: "3px 0 0" }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
       </div>
+
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.5; transform: scale(0.8); }
+        }
+      `}</style>
     </main>
   );
 };

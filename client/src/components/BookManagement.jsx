@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { BookA, Search, Eye, BookOpen } from "lucide-react";
+import { BookA, Search, Eye, BookOpen, Plus, X, Library } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toggleReadBookPopup, toggleRecordBookPopup, toggleAddBookPopup } from "../store/slices/popUpSlice";
 import toast from "react-hot-toast";
@@ -9,6 +9,20 @@ import { fetchBooks, resetBookSlice } from "../store/slices/bookSlice";
 import AddBookPopup from "../popups/AddBookPopup";
 import RecordBookPopup from "../popups/RecordBookPopup";
 import ReadBookPopup from "../popups/ReadBookPopup";
+
+const C = {
+  bg: "#faf6f0",
+  bgDeep: "#f5ede0",
+  bgCard: "#ffffff",
+  border: "#e8ddd0",
+  orange: "#f97316",
+  orangeDeep: "#ea580c",
+  textPrimary: "#2d1f0e",
+  textMuted: "#a89070",
+  textFaint: "#c4a882",
+  dark: "#1a1612",
+  green: "#22c55e",
+};
 
 const BookManagement = () => {
   const dispatch = useDispatch();
@@ -21,6 +35,10 @@ const BookManagement = () => {
   const [readBook, setReadBook] = useState({});
   const [borrowBookId, setBorrowBookId] = useState("");
   const [searchedKeyword, setSearchedKeyword] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  const isAdmin = user?.role === "admin";
 
   const openReadBookPopup = (id) => {
     const book = books.find((b) => b._id === id);
@@ -35,13 +53,14 @@ const BookManagement = () => {
 
   useEffect(() => {
     dispatch(fetchBooks());
+    setTimeout(() => setMounted(true), 60);
   }, [dispatch]);
 
   useEffect(() => {
     if (message || borrowMessage) {
       toast.success(message || borrowMessage);
       dispatch(fetchBooks());
-      if (user?.role === "admin") dispatch(fetchAllBorrows());
+      if (isAdmin) dispatch(fetchAllBorrows());
       dispatch(resetBookSlice());
       dispatch(resetBorrowSlice());
     }
@@ -56,154 +75,384 @@ const BookManagement = () => {
     book.title?.toLowerCase().includes(searchedKeyword.toLowerCase())
   );
 
+  const available = books.filter((b) => b.quantity > 0).length;
+  const outOfStock = books.filter((b) => b.quantity === 0).length;
+
   return (
     <>
-      <main className="flex-1 p-6 bg-gray-50 min-h-screen">
+      <main
+        style={{
+          minHeight: "100vh",
+          background: C.bg,
+          padding: "28px 28px 40px",
+          fontFamily: "system-ui, sans-serif",
+          boxSizing: "border-box",
+        }}
+      >
+        {/* ── Page header ── */}
+        <div
+          style={{
+            marginBottom: 24,
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(-10px)",
+            transition: "opacity 0.4s ease, transform 0.4s ease",
+          }}
+        >
+          <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: "0.28em", textTransform: "uppercase", color: C.orange, margin: "0 0 6px" }}>
+            {isAdmin ? "Admin" : "Browse"}
+          </p>
+          <h1 style={{ fontSize: 22, fontWeight: 900, color: C.textPrimary, fontFamily: "Georgia, serif", margin: 0, letterSpacing: "-0.02em" }}>
+            {isAdmin ? "Book Management" : "Library Catalog"}
+          </h1>
+          <p style={{ fontSize: 11, color: C.textMuted, margin: "5px 0 0" }}>
+            {isAdmin ? "Manage and view all available books in the library" : "Browse all books available for borrowing"}
+          </p>
+        </div>
 
-        {/* Header */}
-        <header className="flex flex-col gap-4 md:flex-row md:justify-between md:items-center mb-8">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              {user?.role === "admin" ? "Book Management" : "Library Catalog"}
-            </h2>
-            <p className="text-gray-500 text-sm">Manage and view all available books.</p>
+        {/* ── Stat chips + controls row ── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            flexWrap: "wrap",
+            gap: 12,
+            marginBottom: 20,
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(10px)",
+            transition: "opacity 0.4s ease 80ms, transform 0.4s ease 80ms",
+          }}
+        >
+          {/* Stat chips */}
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            {[
+              { label: "Total Books", value: books.length, bg: C.bgCard, border: C.border, color: C.textPrimary },
+              { label: "Available", value: available, bg: "#f0fdf4", border: "#bbf7d0", color: "#15803d" },
+              ...(outOfStock > 0
+                ? [{ label: "Out of Stock", value: outOfStock, bg: "#fef2f2", border: "#fecaca", color: "#dc2626" }]
+                : []),
+            ].map(({ label, value, bg, border, color }) => (
+              <div
+                key={label}
+                style={{
+                  display: "flex", alignItems: "center", gap: 9,
+                  padding: "8px 14px",
+                  background: bg,
+                  border: `1.5px solid ${border}`,
+                  borderRadius: 12,
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                }}
+              >
+                <span style={{ fontSize: 16, fontWeight: 900, color, fontFamily: "Georgia, serif", lineHeight: 1 }}>{value}</span>
+                <span style={{ fontSize: 9, fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color: C.textMuted }}>{label}</span>
+              </div>
+            ))}
           </div>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {/* Right controls */}
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            {/* Search */}
+            <div
+              style={{
+                display: "flex", alignItems: "center", gap: 9,
+                padding: "9px 14px",
+                background: searchFocused ? C.bgCard : C.bgDeep,
+                border: `1.5px solid ${searchFocused ? C.orange : C.border}`,
+                borderRadius: 12,
+                boxShadow: searchFocused ? "0 0 0 3px rgba(249,115,22,0.1)" : "none",
+                transition: "all 0.2s ease",
+                minWidth: 220,
+              }}
+            >
+              <Search size={13} color={searchFocused ? C.orange : C.textFaint} />
               <input
                 type="text"
-                placeholder="Search by title..."
+                placeholder="Search by title…"
                 value={searchedKeyword}
                 onChange={(e) => setSearchedKeyword(e.target.value)}
-                className="pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500/20 outline-none w-full sm:w-64 transition-all"
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
+                style={{
+                  flex: 1,
+                  background: "transparent",
+                  border: "none",
+                  outline: "none",
+                  fontSize: 12,
+                  color: C.textPrimary,
+                  fontFamily: "system-ui, sans-serif",
+                }}
               />
+              {searchedKeyword && (
+                <button
+                  onClick={() => setSearchedKeyword("")}
+                  style={{ background: "none", border: "none", cursor: "pointer", color: C.textFaint, display: "flex" }}
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
-            {isAuthenticated && user?.role === "admin" && (
+
+            {/* Add Book button (admin only) */}
+            {isAuthenticated && isAdmin && (
               <button
                 onClick={() => dispatch(toggleAddBookPopup())}
-                className="flex items-center justify-center gap-2 py-2 px-6 bg-black text-white rounded-xl hover:bg-gray-800 transition-all active:scale-95 font-medium"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 7,
+                  padding: "9px 18px",
+                  background: C.dark,
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 800,
+                  letterSpacing: "0.08em",
+                  cursor: "pointer",
+                  transition: "all 0.2s ease",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                  whiteSpace: "nowrap",
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = C.orange;
+                  e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.3)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = C.dark;
+                  e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.15)";
+                }}
               >
-                <span className="text-lg">+</span> Add New Book
+                <Plus size={13} />
+                Add New Book
               </button>
             )}
           </div>
-        </header>
+        </div>
 
-        {/* Table */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+        {/* ── Table card ── */}
+        <div
+          style={{
+            background: C.bgCard,
+            border: `1.5px solid ${C.border}`,
+            borderRadius: 16,
+            boxShadow: "0 2px 16px rgba(0,0,0,0.04)",
+            overflow: "hidden",
+            opacity: mounted ? 1 : 0,
+            transform: mounted ? "translateY(0)" : "translateY(16px)",
+            transition: "opacity 0.5s ease 160ms, transform 0.5s ease 160ms",
+          }}
+        >
+          <div style={{ overflowX: "auto" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
-                <tr className="bg-gray-50 border-b border-gray-100">
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">#</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Book</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Author</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Category</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Price</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Quantity</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Status</th>
-                  <th className="text-left px-6 py-4 text-[11px] font-bold uppercase tracking-widest text-gray-400">Actions</th>
+                <tr style={{ background: C.bgDeep, borderBottom: `1.5px solid ${C.border}` }}>
+                  {["#", "Book", "Author", "Category", "Price", "Qty", "Status", "Actions"].map((h) => (
+                    <th
+                      key={h}
+                      style={{
+                        padding: "12px 18px", textAlign: "left",
+                        fontSize: 8, fontWeight: 800, letterSpacing: "0.22em",
+                        textTransform: "uppercase", color: C.textFaint,
+                        fontFamily: "system-ui, sans-serif", whiteSpace: "nowrap",
+                      }}
+                    >
+                      {h}
+                    </th>
+                  ))}
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50">
-                {searchedBooks.length > 0 ? (
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} style={{ padding: "60px 0", textAlign: "center" }}>
+                      <div style={{ width: 24, height: 24, border: `2px solid ${C.border}`, borderTopColor: C.orange, borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto" }} />
+                    </td>
+                  </tr>
+                ) : searchedBooks.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} style={{ padding: "60px 0", textAlign: "center" }}>
+                      <div style={{ width: 52, height: 52, background: C.bgDeep, border: `1.5px solid ${C.border}`, borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 14px" }}>
+                        <BookA size={22} color={C.textFaint} />
+                      </div>
+                      <p style={{ fontSize: 12, color: C.textMuted, margin: 0, fontWeight: 700, fontFamily: "Georgia, serif" }}>
+                        {searchedKeyword ? "No books match your search" : "No books in the catalog"}
+                      </p>
+                      <p style={{ fontSize: 10, color: C.textFaint, margin: "5px 0 0" }}>
+                        {searchedKeyword ? "Try a different keyword" : isAdmin ? "Add your first book to get started" : "Check back later"}
+                      </p>
+                    </td>
+                  </tr>
+                ) : (
                   searchedBooks.map((book, index) => (
-                    <tr key={book._id} className="hover:bg-gray-50 transition-colors">
-
+                    <tr
+                      key={book._id}
+                      style={{ borderBottom: `1px solid ${C.border}`, transition: "background 0.15s" }}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = C.bgDeep)}
+                      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+                    >
                       {/* # */}
-                      <td className="px-6 py-4 text-gray-400 font-mono text-xs">
+                      <td style={{ padding: "14px 18px", fontSize: 10, color: C.textFaint, fontFamily: "Georgia, serif", fontWeight: 700, width: 40 }}>
                         {index + 1}
                       </td>
 
                       {/* Book */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={book.coverImage?.url || "https://placehold.co/40x55"}
-                            alt={book.title}
-                            className="w-9 h-12 object-cover rounded-md flex-shrink-0"
-                            onError={(e) => { e.target.src = "https://placehold.co/40x55"; }}
-                          />
-                          <p className="font-bold text-gray-900 line-clamp-1 max-w-[160px]">{book.title}</p>
+                      <td style={{ padding: "14px 18px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <div style={{ width: 36, height: 50, borderRadius: 7, overflow: "hidden", flexShrink: 0, border: `1px solid ${C.border}`, boxShadow: "2px 2px 8px rgba(0,0,0,0.1)" }}>
+                            {book.coverImage?.url ? (
+                              <img
+                                src={book.coverImage.url}
+                                alt={book.title}
+                                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                                onError={(e) => { e.target.style.display = "none"; e.target.parentNode.style.background = C.dark; }}
+                              />
+                            ) : (
+                              <div style={{ width: "100%", height: "100%", background: C.dark, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                                <BookOpen size={12} color="#fff" />
+                              </div>
+                            )}
+                          </div>
+                          <p style={{ fontSize: 12, fontWeight: 700, color: C.textPrimary, margin: 0, fontFamily: "Georgia, serif", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", maxWidth: 160 }}>
+                            {book.title}
+                          </p>
                         </div>
                       </td>
 
                       {/* Author */}
-                      <td className="px-6 py-4 text-gray-500 text-xs">{book.author}</td>
+                      <td style={{ padding: "14px 18px", fontSize: 11, color: C.textMuted, whiteSpace: "nowrap" }}>
+                        {book.author}
+                      </td>
 
                       {/* Category */}
-                      <td className="px-6 py-4">
-                        <span className="text-[10px] bg-gray-100 text-gray-600 px-3 py-1 rounded-full font-bold uppercase">
+                      <td style={{ padding: "14px 18px" }}>
+                        <span style={{
+                          display: "inline-block",
+                          padding: "4px 10px",
+                          background: C.bgDeep,
+                          border: `1px solid ${C.border}`,
+                          borderRadius: 8,
+                          fontSize: 9,
+                          fontWeight: 800,
+                          letterSpacing: "0.1em",
+                          textTransform: "uppercase",
+                          color: C.textMuted,
+                          whiteSpace: "nowrap",
+                        }}>
                           {book.category}
                         </span>
                       </td>
 
                       {/* Price */}
-                      <td className="px-6 py-4 text-gray-700 font-semibold">
-                        ₹{book.price}
+                      <td style={{ padding: "14px 18px" }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: C.textPrimary, fontFamily: "Georgia, serif" }}>
+                          ₹{book.price}
+                        </span>
                       </td>
 
-                      {/* Quantity */}
-                      <td className="px-6 py-4 text-gray-700">
-                        {book.quantity}
+                      {/* Qty */}
+                      <td style={{ padding: "14px 18px" }}>
+                        <span style={{
+                          fontSize: 13,
+                          fontWeight: 900,
+                          color: book.quantity === 0 ? "#dc2626" : book.quantity <= 3 ? C.orange : C.textPrimary,
+                          fontFamily: "Georgia, serif",
+                        }}>
+                          {book.quantity}
+                        </span>
                       </td>
 
                       {/* Status */}
-                      <td className="px-6 py-4">
+                      <td style={{ padding: "14px 18px" }}>
                         {book.quantity > 0 ? (
-                          <span className="text-[10px] bg-green-100 text-green-600 px-3 py-1 rounded-full font-bold uppercase">
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", background: "#f0fdf4", color: "#15803d", border: "1px solid #bbf7d0", borderRadius: 8, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: C.green, display: "inline-block", animation: "pulse 2s infinite" }} />
                             Available
                           </span>
                         ) : (
-                          <span className="text-[10px] bg-red-100 text-red-500 px-3 py-1 rounded-full font-bold uppercase">
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "4px 10px", background: "#fef2f2", color: "#dc2626", border: "1px solid #fecaca", borderRadius: 8, fontSize: 9, fontWeight: 800, letterSpacing: "0.12em", textTransform: "uppercase", whiteSpace: "nowrap" }}>
+                            <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#dc2626", display: "inline-block" }} />
                             Out of Stock
                           </span>
                         )}
                       </td>
 
                       {/* Actions */}
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                      <td style={{ padding: "14px 18px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          {/* View */}
                           <button
                             onClick={() => openReadBookPopup(book._id)}
-                            className="p-2 rounded-lg bg-gray-100 hover:bg-orange-100 hover:text-orange-500 text-gray-400 transition-all"
                             title="View Details"
+                            style={{
+                              width: 32, height: 32, borderRadius: 9,
+                              border: `1.5px solid ${C.border}`,
+                              background: C.bgDeep,
+                              cursor: "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "all 0.2s ease",
+                              color: C.textMuted,
+                            }}
+                            onMouseEnter={(e) => { e.currentTarget.style.background = "#fff7ed"; e.currentTarget.style.borderColor = "rgba(249,115,22,0.3)"; e.currentTarget.style.color = C.orange; }}
+                            onMouseLeave={(e) => { e.currentTarget.style.background = C.bgDeep; e.currentTarget.style.borderColor = C.border; e.currentTarget.style.color = C.textMuted; }}
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye size={13} />
                           </button>
+
+                          {/* Borrow */}
                           <button
                             onClick={() => openRecordBookPopup(book._id)}
                             disabled={book.quantity === 0}
-                            className="p-2 rounded-lg bg-orange-500 hover:bg-orange-600 text-white transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-                            title="Borrow Book"
+                            title={book.quantity === 0 ? "Out of stock" : "Borrow Book"}
+                            style={{
+                              width: 32, height: 32, borderRadius: 9,
+                              border: "none",
+                              background: book.quantity === 0 ? C.bgDeep : `linear-gradient(135deg, ${C.orange}, ${C.orangeDeep})`,
+                              cursor: book.quantity === 0 ? "not-allowed" : "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center",
+                              transition: "all 0.2s ease",
+                              opacity: book.quantity === 0 ? 0.45 : 1,
+                              boxShadow: book.quantity === 0 ? "none" : "0 2px 8px rgba(249,115,22,0.3)",
+                            }}
+                            onMouseEnter={(e) => { if (book.quantity > 0) e.currentTarget.style.boxShadow = "0 4px 14px rgba(249,115,22,0.45)"; }}
+                            onMouseLeave={(e) => { if (book.quantity > 0) e.currentTarget.style.boxShadow = "0 2px 8px rgba(249,115,22,0.3)"; }}
                           >
-                            <BookOpen className="w-4 h-4" />
+                            <BookOpen size={13} color={book.quantity === 0 ? C.textFaint : "#fff"} />
                           </button>
                         </div>
                       </td>
-
                     </tr>
                   ))
-                ) : (
-                  <tr>
-                    <td colSpan={8} className="py-20 text-center">
-                      <BookA className="w-12 h-12 text-gray-200 mx-auto mb-3" />
-                      <p className="text-gray-400">No books found matching your search.</p>
-                    </td>
-                  </tr>
                 )}
               </tbody>
             </table>
           </div>
-        </div>
 
+          {/* Footer */}
+          {searchedBooks.length > 0 && (
+            <div style={{ padding: "10px 18px", borderTop: `1px solid ${C.border}`, background: C.bgDeep, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <p style={{ fontSize: 10, color: C.textMuted, margin: 0, fontWeight: 600 }}>
+                Showing <span style={{ color: C.textPrimary, fontWeight: 800 }}>{searchedBooks.length}</span> of{" "}
+                <span style={{ color: C.textPrimary, fontWeight: 800 }}>{books.length}</span> books
+              </p>
+              {searchedKeyword && (
+                <button
+                  onClick={() => setSearchedKeyword("")}
+                  style={{ fontSize: 10, color: C.orange, background: "none", border: "none", cursor: "pointer", fontWeight: 700, fontFamily: "system-ui" }}
+                >
+                  Clear search
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </main>
 
       {addBookPopup && <AddBookPopup />}
       {recordBookPopup && <RecordBookPopup bookId={borrowBookId} />}
       {readBookPopup && <ReadBookPopup book={readBook} />}
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+      `}</style>
     </>
   );
 };

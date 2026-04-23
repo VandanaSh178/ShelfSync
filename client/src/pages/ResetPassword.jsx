@@ -2,9 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, Navigate, useParams } from "react-router-dom";
 import { toast } from "react-hot-toast";
-import { BookOpen, Lock, CheckCircle2, Loader2 } from "lucide-react";
-// FIX: removed stale `import logo_with_title from "../assets/logo-with-title.png"`
-// The redesigned page uses BookOpen from lucide-react, not the image asset.
+import { BookOpen, Lock, Loader2, Eye, EyeOff, ArrowRight } from "lucide-react";
 
 import { resetPassword, resetAuthSlice } from "../store/slices/authSlice";
 
@@ -12,6 +10,8 @@ const ResetPassword = () => {
   const { token } = useParams();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const dispatch = useDispatch();
   const { loading, error, message, isAuthenticated } = useSelector(
@@ -37,8 +37,6 @@ const ResetPassword = () => {
     }
   }, [dispatch, error, message]);
 
-  // FIX: was redirecting to "/" (landing page) — user had to manually navigate
-  // to login after resetting their password. Now goes straight to /login.
   if (isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
@@ -46,7 +44,7 @@ const ResetPassword = () => {
   return (
     <div className="flex min-h-screen" style={{ fontFamily: "'Georgia', serif" }}>
 
-      {/* LEFT PANEL */}
+      {/* ── LEFT PANEL ── */}
       <div className="hidden lg:flex lg:w-[52%] relative flex-col overflow-hidden">
         <div
           className="absolute inset-0 bg-cover bg-center"
@@ -104,7 +102,7 @@ const ResetPassword = () => {
         </div>
       </div>
 
-      {/* RIGHT PANEL */}
+      {/* ── RIGHT PANEL ── */}
       <div className="flex-1 bg-[#fafaf8] flex flex-col">
 
         {/* Mobile header */}
@@ -132,6 +130,7 @@ const ResetPassword = () => {
             </div>
 
             <form onSubmit={handleResetPassword} className="space-y-4">
+              {/* New password */}
               <div>
                 <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">
                   New password
@@ -139,30 +138,45 @@ const ResetPassword = () => {
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? "text" : "password"}
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-900 placeholder-gray-300 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-12 py-3.5 text-[14px] text-gray-900 placeholder-gray-300 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
+              {/* Confirm password */}
               <div>
                 <label className="block text-[10px] uppercase tracking-[0.2em] text-gray-500 font-bold mb-2">
                   Confirm password
                 </label>
                 <div className="relative">
-                  <CheckCircle2 className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <input
-                    type="password"
+                    type={showConfirm ? "text" : "password"}
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-4 py-3.5 text-[14px] text-gray-900 placeholder-gray-300 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
+                    className="w-full bg-white border border-gray-200 rounded-2xl pl-11 pr-12 py-3.5 text-[14px] text-gray-900 placeholder-gray-300 focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 transition-all"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm(!showConfirm)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -177,7 +191,10 @@ const ResetPassword = () => {
                     Updating…
                   </>
                 ) : (
-                  "Update password"
+                  <>
+                    Update password
+                    <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
+                  </>
                 )}
               </button>
             </form>
