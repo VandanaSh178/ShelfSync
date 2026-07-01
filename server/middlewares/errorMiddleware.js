@@ -1,4 +1,3 @@
-// backend me jo bhi errors aaye unko properly handle karke client ko clean response bhejna.
 class ErrorHandler extends Error {
   constructor(message, statusCode) {
     super(message);
@@ -7,41 +6,56 @@ class ErrorHandler extends Error {
 }
 
 export const errorMiddleware = (err, req, res, next) => {
+  // Default values
   err.statusCode = err.statusCode || 500;
   err.message = err.message || "Internal Server Error";
 
+  // Duplicate Key Error (MongoDB)
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
 
-  if(err.code==11000){
-    err.message = "Duplicate Key Error: A record with this value already exists.";
-    err.statusCode = 400;
-    err= new ErrorHandler(err.message, err.statusCode);
+    err = new ErrorHandler(
+      `${field} already exists. Please use a different ${field}.`,
+      400
+    );
   }
 
-  if(err.name === "TokenExpiredError"){
-    const messages = Object.values(err.errors).map((val) => val.message);
-    err.message = `Validation Error: ${messages.join(", ")}`;
-    err.statusCode = 400;
-    err= new ErrorHandler(err.message, err.statusCode);
-  }   
+  // Mongoose Validation Error
+  if (err.name === "ValidationError") {
+    const message = Object.values(err.errors)
+      .map((val) => val.message)
+      .join(", ");
 
-  if(err.name=="JsonWebTokenError"){
-    const statusCode = 400;
-    const message = "Invalid Token: Please provide a valid token.";
-    err = new ErrorHandler(message, statusCode);
+    err = new ErrorHandler(message, 400);
   }
 
-  if(err.name=="CastError"){
-    const statusCode = 400;
-    const message = `Invalid ${err.path}: ${err.value}`;
-    err = new ErrorHandler(message, statusCode);
-    
+  // Invalid JWT
+  if (err.name === "JsonWebTokenError") {
+    err = new ErrorHandler(
+      "Invalid token. Please login again.",
+      401
+    );
   }
 
-  const errorMessage=err.errors? Object.values(err.errors).map((val) => val.message).join(", "): err.message;
+  // Expired JWT
+  if (err.name === "TokenExpiredError") {
+    err = new ErrorHandler(
+      "Token has expired. Please login again.",
+      401
+    );
+  }
+
+  // Invalid MongoDB ObjectId
+  if (err.name === "CastError") {
+    err = new ErrorHandler(
+      `Invalid ${err.path}: ${err.value}`,
+      400
+    );
+  }
 
   return res.status(err.statusCode).json({
     success: false,
-    message: errorMessage,
+    message: err.message,
   });
 };
 
