@@ -35,7 +35,7 @@ const bookSchema = new mongoose.Schema(
       enum: ["Fiction", "Non-Fiction", "Education", "Comics"],
       default: "Education",
     },
-    image: {
+    coverImage: {
       url: String,
       public_id: String,
     },
