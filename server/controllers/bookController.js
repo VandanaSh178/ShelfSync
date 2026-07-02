@@ -12,6 +12,14 @@ export const addBook = catchAsyncErrors(async (req, res, next) => {
     return next(new ErrorHandler("Please provide all required fields", 400));
   }
 
+  if (Number(price) <= 0) {
+  return next(new ErrorHandler("Price must be greater than 0", 400));
+}
+
+if (Number(quantity) < 0) {
+  return next(new ErrorHandler("Quantity cannot be negative", 400));
+}
+
   const existingBook = await Book.findOne({ title, author });
   if (existingBook) {
     return next(new ErrorHandler("Book already exists", 400));
