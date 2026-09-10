@@ -191,11 +191,6 @@ npm run dev
 
 ---
 
-## 📸 Screenshots
-
-> Add screenshots of your app here
-
----
 
 ## 🙌 Acknowledgements
 
