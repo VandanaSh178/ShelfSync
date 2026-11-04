@@ -15,7 +15,7 @@
     "mongoose": "^9.2.4",
     "node-cron": "^4.2.1",
     "nodemailer": "^8.0.1",
-    "resend": "^6.10.0"
+    "resend": "^6.37.0"
   },
   "name": "server",
   "version": "1.0.0",
