@@ -6,18 +6,15 @@ const getTransporter = () => {
   if (transporter) return transporter;
 
   transporter = nodeMailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    family: 4,
-    auth: {
-      user: process.env.SMTP_EMAIL,
-      pass: process.env.SMTP_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
+  family: 4,
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
   return transporter;
 };
@@ -45,10 +42,10 @@ export const sendEmail = async (emailOrOptions, subject, message) => {
     html = message;
   }
 
-  await getTransporter().sendMail({
-    from: `"ShelfSync" <${process.env.SMTP_EMAIL}>`,
-    to,
-    subject: sub,
-    html,
-  });
-};
+  return await getTransporter().sendMail({
+  from: `"ShelfSync" <${process.env.SMTP_EMAIL}>`,
+  to,
+  subject: sub,
+  html,
+});
+}
