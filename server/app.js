@@ -19,35 +19,89 @@ import { removeUnverifiedAccounts } from "./services/removeUnverifiedAccounts.js
 export const app = express();
 
 // CORS - Multi-origin (supports Netlify, Vercel, and localhost)
+
+// CORS - Allow production, Vercel previews, and localhost
 const allowedOrigins = [
   "https://shelf-sync-1.vercel.app",
   "http://localhost:5173",
 ].filter(Boolean);
 
-// Also add FRONTEND_URL dynamically if set
+// Add the configured frontend URL from Render environment variables
 if (process.env.FRONTEND_URL) {
-  allowedOrigins.push(process.env.FRONTEND_URL);
+  allowedOrigins.push(process.env.FRONTEND_URL.replace(/\/$/, ""));
 }
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests without an Origin header
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      // Allow explicitly configured origins
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Allow Vercel preview deployments for this project
+      const isVercelPreview =
+        /^https:\/\/shelf-sync-[a-z0-9-]+-vandana-sharmas-projects-9f27d3e2\.vercel\.app$/.test(
+          origin
+        );
+
+      if (isVercelPreview) {
+        return callback(null, true);
+      }
+
       console.error(`CORS blocked: ${origin}`);
       return callback(new Error(`CORS blocked for origin: ${origin}`));
     },
+
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
-    preflightContinue: false,      // ← cors handles OPTIONS itself
+
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Request-Timestamp",
+    ],
+
+    preflightContinue: false,
     optionsSuccessStatus: 204,
   })
 );
 
-// app.options("/(.*)",cors());
 
-// Middlewares
+
+// const allowedOrigins = [
+//   "https://shelf-sync-1.vercel.app",
+//   "http://localhost:5173",
+// ].filter(Boolean);
+
+// // Also add FRONTEND_URL dynamically if set
+// if (process.env.FRONTEND_URL) {
+//   allowedOrigins.push(process.env.FRONTEND_URL);
+// }
+
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       if (!origin) return callback(null, true);
+//       if (allowedOrigins.includes(origin)) return callback(null, true);
+//       console.error(`CORS blocked: ${origin}`);
+//       return callback(new Error(`CORS blocked for origin: ${origin}`));
+//     },
+//     credentials: true,
+//     methods: ["GET", "POST", "PUT", "DELETE","OPTIONS"],
+//     allowedHeaders: ["Content-Type", "Authorization", "X-Request-Timestamp"],
+//     preflightContinue: false,      // ← cors handles OPTIONS itself
+//     optionsSuccessStatus: 204,
+//   })
+// );
+
+// // app.options("/(.*)",cors());
+
+// // Middlewares
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
