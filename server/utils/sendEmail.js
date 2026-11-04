@@ -52,21 +52,79 @@
 
 
 
-import { Resend } from "resend";
+// import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// const resend = new Resend(process.env.RESEND_API_KEY);
+
+// export const verifyEmailConnection = async () => {
+//   if (!process.env.RESEND_API_KEY) {
+//     console.error("❌ RESEND_API_KEY is missing");
+//     return;
+//   }
+
+//   console.log("✅ Resend email service configured");
+// };
+
+// export const sendEmail = async (emailOrOptions, subject, message) => {
+//   let to, sub, html;
+
+//   if (typeof emailOrOptions === "object" && emailOrOptions !== null) {
+//     to = emailOrOptions.email;
+//     sub = emailOrOptions.subject;
+//     html = emailOrOptions.message;
+//   } else {
+//     to = emailOrOptions;
+//     sub = subject;
+//     html = message;
+//   }
+
+//   if (!process.env.RESEND_API_KEY) {
+//     throw new Error("RESEND_API_KEY is missing");
+//   }
+
+//   const { data, error } = await resend.emails.send({
+//     from: "ShelfSync <onboarding@resend.dev>",
+//     to,
+//     subject: sub,
+//     html,
+//   });
+
+//   if (error) {
+//     console.error("❌ Resend email error:", error);
+//     throw new Error(error.message);
+//   }
+
+//   console.log("✅ Email sent through Resend:", data?.id);
+
+//   return data;
+// };
+
+
+import nodemailer from "nodemailer";
+
+const transporter = nodemailer.createTransport({
+  host: process.env.SMTP_HOST || "smtp.gmail.com",
+  port: Number(process.env.SMTP_PORT || 465),
+  secure: Number(process.env.SMTP_PORT || 465) === 465,
+  auth: {
+    user: process.env.SMTP_EMAIL,
+    pass: process.env.SMTP_PASSWORD,
+  },
+});
 
 export const verifyEmailConnection = async () => {
-  if (!process.env.RESEND_API_KEY) {
-    console.error("❌ RESEND_API_KEY is missing");
-    return;
+  try {
+    await transporter.verify();
+    console.log("✅ Gmail SMTP connection successful");
+  } catch (error) {
+    console.error("❌ Gmail SMTP connection failed:", error.message);
   }
-
-  console.log("✅ Resend email service configured");
 };
 
 export const sendEmail = async (emailOrOptions, subject, message) => {
-  let to, sub, html;
+  let to;
+  let sub;
+  let html;
 
   if (typeof emailOrOptions === "object" && emailOrOptions !== null) {
     to = emailOrOptions.email;
@@ -78,24 +136,14 @@ export const sendEmail = async (emailOrOptions, subject, message) => {
     html = message;
   }
 
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error("RESEND_API_KEY is missing");
-  }
-
-  const { data, error } = await resend.emails.send({
-    from: "ShelfSync <onboarding@resend.dev>",
+  const info = await transporter.sendMail({
+    from: `"ShelfSync" <${process.env.SMTP_EMAIL}>`,
     to,
     subject: sub,
     html,
   });
 
-  if (error) {
-    console.error("❌ Resend email error:", error);
-    throw new Error(error.message);
-  }
+  console.log("✅ Email sent:", info.messageId);
 
-  console.log("✅ Email sent through Resend:", data?.id);
-
-  return data;
+  return info;
 };
-
